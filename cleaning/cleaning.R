@@ -160,41 +160,41 @@ anti_pseudo_oral_use1 <- anti_pseudo_oral_use %>%
   select(1,3,4,5,7,8,9) %>% 
   rename(id = "患者ID",
          adm = "開始日", # for joining
-         end1 = "終了日",
-         code1 = "薬価コード",
-         name1 = "薬剤名",
-         dose1 = "用量",
-         department1 = "診療科") %>% 
+         oral_end1 = "終了日",
+         oral_code1 = "薬価コード",
+         oral_name1 = "薬剤名",
+         oral_dose1 = "用量",
+         oral_department1 = "診療科") %>% 
   mutate(adm = ymd(adm),
-         end1 = ymd(end1))
+         oral_end1 = ymd(oral_end1))
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, anti_pseudo_oral_use1, by = c("id","adm")) 
 
 anti_pseudo_oral_use2 <- anti_pseudo_oral_use1 %>% 
   mutate(adm = adm - 1) %>% 
-  rename(end2 = "end1",
-         code2 = "code1",
-         name2 = "name1",
-         dose2 = "dose1",
-         department2 = "department1")
+  rename(oral_end2 = "oral_end1",
+         oral_code2 = "oral_code1",
+         oral_name2 = "oral_name1",
+         oral_dose2 = "oral_dose1",
+         oral_department2 = "oral_department1")
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, anti_pseudo_oral_use2, by = c("id","adm")) 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  unite(end, starts_with("end"),
+  unite(oral_end, starts_with("oral_end"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) %>%
-  unite(code, starts_with("code"),
+  unite(oral_code, starts_with("oral_code"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) %>%
-  unite(name, starts_with("name"),
+  unite(oral_name, starts_with("oral_name"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) %>%
-  unite(dose, starts_with("dose"),
+  unite(oral_dose, starts_with("oral_dose"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) %>% 
-  unite(department, starts_with("department"),
+  unite(oral_department, starts_with("oral_department"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE)
@@ -215,102 +215,49 @@ anti_pseudo_iv_use1 <- anti_pseudo_iv_use %>%
   select(1,3,4,5,7,8,9) %>% 
   rename(id = "患者ID",
          adm = "開始日", # for joining
-         end1 = "終了日",
-         code1 = "薬価コード",
-         name1 = "薬剤名",
-         dose1 = "用量",
-         department1 = "診療科") %>% 
+         iv_end1 = "終了日",
+         iv_code1 = "薬価コード",
+         iv_name1 = "薬剤名",
+         iv_dose1 = "用量",
+         iv_department1 = "診療科") %>% 
   mutate(adm = ymd(adm),
-         end1 = ymd(end1)) 
+         iv_end1 = ymd(iv_end1)) 
 anti_pseudo_iv_use1[duplicated(anti_pseudo_iv_use1[,2:3])] # find duplicated cells
 anti_pseudo_iv_use1 <- anti_pseudo_iv_use1 %>% 
   distinct(id, adm, .keep_all=TRUE) # later check the duplicates
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, anti_pseudo_iv_use1, by = c("id","adm")) 
 
-anti_pseudo_oral_use2 <- anti_pseudo_oral_use1 %>% 
+anti_pseudo_iv_use2 <- anti_pseudo_iv_use1 %>% 
   mutate(adm = adm - 1) %>% 
-  rename(end2 = "end1",
-         code2 = "code1",
-         name2 = "name1",
-         dose2 = "dose1",
-         department2 = "department1")
-dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, anti_pseudo_oral_use2, by = c("id","adm")) 
+  rename(iv_end2 = "iv_end1",
+         iv_code2 = "iv_code1",
+         iv_name2 = "iv_name1",
+         iv_dose2 = "iv_dose1",
+         iv_department2 = "iv_department1")
+anti_pseudo_iv_use2[duplicated(anti_pseudo_iv_use2[,2:3])] # find duplicated cells
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, anti_pseudo_iv_use2, by = c("id","adm")) 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  unite(end, starts_with("end"),
+  unite(iv_end, starts_with("iv_end"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) %>%
-  unite(code, starts_with("code"),
+  unite(iv_code, starts_with("iv_code"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) %>%
-  unite(name, starts_with("name"),
+  unite(iv_name, starts_with("iv_name"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) %>%
-  unite(dose, starts_with("dose"),
+  unite(iv_dose, starts_with("iv_dose"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) %>% 
-  unite(department, starts_with("department"),
+  unite(iv_department, starts_with("iv_department"),
         sep = "_",
         remove = TRUE,
         na.rm = TRUE)
 
-
-
-abx_list1 <- list %>% 
-  slice(7:346) %>% 
-  drop_na(YJコード) %>% 
-  pull(YJコード)
-filter_abx <- str_c(abx_list1, collapse = "|")
-abx_oral <- emr_drug_data %>% 
-  filter(str_detect(薬価コード, filter_abx))
-unique(abx_oral$薬剤名)
-oral_anti_pseudo <- abx_oral %>% 
-  distinct(薬剤名) %>% 
-  as_tibble()
-oral_anti_pseudo <- oral_anti_pseudo[c(3,10,11,15,16,26,41,42,69,75,82,83,84,100,101,
-                                       103,106,116,117,119,120,121,123,124,125,127,129,
-                                       132,133,143,144,148,149150,151,152,156,157,158,
-                                       159,160,163,166,167,168,175,177,178,179,182,183),] %>% pull(薬剤名)
-filter_oral_anti_pseudo <- str_c(oral_anti_pseudo, collapse = "|")
-
-# iv abx
-
-abx_list1 <- list %>% 
-  slice(423:816) %>% 
-  drop_na(YJコード) %>% 
-  pull(YJコード)
-filter_abx <- str_c(abx_list1, collapse = "|")
-abx <- emr_drug_data %>% 
-  filter(str_detect(薬価コード, filter_abx))
-anti_pseudo <- unique(abx$薬剤名) %>% 
-  select(3,10,11,15,16,)
-
-# oral steroid
-
-abx_list1 <- list %>% 
-  slice(423:816) %>% 
-  drop_na(YJコード) %>% 
-  pull(YJコード)
-filter_abx <- str_c(abx_list1, collapse = "|")
-abx <- emr_drug_data %>% 
-  filter(str_detect(薬価コード, filter_abx))
-anti_pseudo <- unique(abx$薬剤名) %>% 
-  select(3,10,11,15,16,)
-
-# iv steroid
-
-abx_list1 <- list %>% 
-  slice(352:423) %>% 
-  drop_na(YJコード) %>% 
-  pull(YJコード)
-filter_abx <- str_c(abx_list1, collapse = "|")
-abx <- emr_drug_data %>% 
-  filter(str_detect(薬価コード, filter_abx))
-anti_pseudo <- unique(abx$薬剤名) %>% 
-  select(3,10,11,15,16,)
 
 # EMR Disease Data --------------------------------------------------------
 
