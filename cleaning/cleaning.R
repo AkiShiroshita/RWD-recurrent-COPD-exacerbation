@@ -536,26 +536,18 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
 steroid <- read_excel("memo/steroid.xlsx")
 steroid <- steroid %>% 
   pull(drug)
-filter_steroid <- str_c(steroid, collapse = "|")
 
-oral <- read_excel("memo/oral.xlsx")
-oral %>% colnames()
+filter_steroid <- str_c(steroid, collapse = "|")
 steroid_oral <- oral %>% 
   filter(str_detect(成分名, filter_steroid)) %>% 
   select(2) %>% 
   pull()
-
-
-
-
-
-
-filter_anti_pseudo_oral <- str_c(anti_pseudo_oral, collapse = "|")
-anti_pseudo_oral_use <- emr_drug_data %>% 
-  filter(str_detect(薬価コード, filter_anti_pseudo_oral))
-anti_pseudo_oral_use %>% glimpse()
-anti_pseudo_oral_use %>% colnames()
-anti_pseudo_oral_use1 <- anti_pseudo_oral_use %>% 
+filter_steroid_oral_code <- str_c(steroid_oral, collapse = "|")
+steroid_oral_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_steroid_oral_code))
+steroid_oral_use %>% glimpse()
+steroid_oral_use %>% colnames()
+steroid_oral_use1 <- steroid_oral_use %>% 
   select(1,3,4,5,7,8,9) %>% 
   rename(id = "患者ID",
          adm = "開始日", # for joining
@@ -565,131 +557,213 @@ anti_pseudo_oral_use1 <- anti_pseudo_oral_use %>%
          oral_dose1 = "用量",
          oral_department1 = "診療科") %>% 
   mutate(adm = ymd(adm),
-         oral_end1 = ymd(oral_end1))
-dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, anti_pseudo_oral_use1, by = c("id","adm")) 
+         oral_end1 = ymd(oral_end1)) %>% 
+  distinct(id, adm, oral_code1, .keep_all=TRUE)
+steroid_oral_use1 <- inner_join(key, steroid_oral_use1, by = c("id","adm")) 
+steroid_oral_use1_wide <- steroid_oral_use1 %>% 
+  select(id,adm,oral_code1) %>% 
+  pivot_wider(names_from = oral_code1,
+              values_from = oral_code1,
+              names_prefix = "drug") %>% 
+  unite(steroid_oral1, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
 
-anti_pseudo_oral_use2 <- anti_pseudo_oral_use1 %>% 
-  mutate(adm = adm - 1) %>% 
-  rename(oral_end2 = "oral_end1",
-         oral_code2 = "oral_code1",
-         oral_name2 = "oral_name1",
-         oral_dose2 = "oral_dose1",
-         oral_department2 = "oral_department1")
-dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, anti_pseudo_oral_use2, by = c("id","adm")) 
+steroid_oral_use2 <- steroid_oral_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         oral_end2 = "終了日",
+         oral_code2 = "薬価コード",
+         oral_name2 = "薬剤名",
+         oral_dose2 = "用量",
+         oral_department2 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         adm = adm - 1,
+         oral_end2 = ymd(oral_end2)) %>% 
+  distinct(id, adm, oral_code2, .keep_all=TRUE)
+steroid_oral_use2 <- inner_join(key, steroid_oral_use2, by = c("id","adm")) 
+steroid_oral_use2_wide <- steroid_oral_use2 %>% 
+  select(id,adm,oral_code2) %>% 
+  pivot_wider(names_from = oral_code2,
+              values_from = oral_code2,
+              names_prefix = "drug") %>% 
+  unite(steroid_oral2, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, steroid_oral_use1_wide, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, steroid_oral_use2_wide, by = c("id","adm")) 
+
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  unite(oral_end, starts_with("oral_end"),
+  unite(steroid_oral, starts_with("steroid_oral"),
         sep = "_",
         remove = TRUE,
-        na.rm = TRUE) %>%
-  unite(oral_code, starts_with("oral_code"),
-        sep = "_",
-        remove = TRUE,
-        na.rm = TRUE) %>%
-  unite(oral_name, starts_with("oral_name"),
-        sep = "_",
-        remove = TRUE,
-        na.rm = TRUE) %>%
-  unite(oral_dose, starts_with("oral_dose"),
-        sep = "_",
-        remove = TRUE,
-        na.rm = TRUE) %>% 
-  unite(oral_department, starts_with("oral_department"),
-        sep = "_",
-        remove = TRUE,
-        na.rm = TRUE)
+        na.rm = TRUE) 
 
-# oral abx
-oral <- read_excel("memo/oral.xlsx")
-oral %>% colnames()
-anti_pseudo_oral <- oral %>% 
-  filter(str_detect(成分名, filter_anti_pseudo)) %>% 
+# iv steroid 
+
+steroid <- read_excel("memo/steroid.xlsx")
+steroid <- steroid %>% 
+  pull(drug)
+
+filter_steroid <- str_c(steroid, collapse = "|")
+steroid_iv <- iv %>% 
+  filter(str_detect(成分名, filter_steroid)) %>% 
   select(2) %>% 
   pull()
-filter_anti_pseudo_oral <- str_c(anti_pseudo_oral, collapse = "|")
-anti_pseudo_oral_use <- emr_drug_data %>% 
-  filter(str_detect(薬価コード, filter_anti_pseudo_oral))
-anti_pseudo_oral_use %>% glimpse()
-anti_pseudo_oral_use %>% colnames()
-anti_pseudo_oral_use1 <- anti_pseudo_oral_use %>% 
+filter_steroid_iv_code <- str_c(steroid_iv, collapse = "|")
+steroid_iv_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_steroid_iv_code))
+steroid_iv_use %>% glimpse()
+steroid_iv_use %>% colnames()
+steroid_iv_use1 <- steroid_iv_use %>% 
   select(1,3,4,5,7,8,9) %>% 
   rename(id = "患者ID",
          adm = "開始日", # for joining
-         oral_end1 = "終了日",
-         oral_code1 = "薬価コード",
-         oral_name1 = "薬剤名",
-         oral_dose1 = "用量",
-         oral_department1 = "診療科") %>% 
+         iv_end1 = "終了日",
+         iv_code1 = "薬価コード",
+         iv_name1 = "薬剤名",
+         iv_dose1 = "用量",
+         iv_department1 = "診療科") %>% 
   mutate(adm = ymd(adm),
-         oral_end1 = ymd(oral_end1))
-dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, anti_pseudo_oral_use1, by = c("id","adm")) 
+         iv_end1 = ymd(iv_end1)) %>% 
+  distinct(id, adm, iv_code1, .keep_all=TRUE)
+steroid_iv_use1 <- inner_join(key, steroid_iv_use1, by = c("id","adm")) 
+steroid_iv_use1_wide <- steroid_iv_use1 %>% 
+  select(id,adm,iv_code1) %>% 
+  pivot_wider(names_from = iv_code1,
+              values_from = iv_code1,
+              names_prefix = "drug") %>% 
+  unite(steroid_iv1, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
 
-anti_pseudo_oral_use2 <- anti_pseudo_oral_use1 %>% 
-  mutate(adm = adm - 1) %>% 
-  rename(oral_end2 = "oral_end1",
-         oral_code2 = "oral_code1",
-         oral_name2 = "oral_name1",
-         oral_dose2 = "oral_dose1",
-         oral_department2 = "oral_department1")
-dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, anti_pseudo_oral_use2, by = c("id","adm")) 
+steroid_iv_use2 <- steroid_iv_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         iv_end2 = "終了日",
+         iv_code2 = "薬価コード",
+         iv_name2 = "薬剤名",
+         iv_dose2 = "用量",
+         iv_department2 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         adm = adm - 1,
+         iv_end2 = ymd(iv_end2)) %>% 
+  distinct(id, adm, iv_code2, .keep_all=TRUE)
+steroid_iv_use2 <- inner_join(key, steroid_iv_use2, by = c("id","adm")) 
+steroid_iv_use2_wide <- steroid_iv_use2 %>% 
+  select(id,adm,iv_code2) %>% 
+  pivot_wider(names_from = iv_code2,
+              values_from = iv_code2,
+              names_prefix = "drug") %>% 
+  unite(steroid_iv2, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, steroid_iv_use1_wide, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, steroid_iv_use2_wide, by = c("id","adm")) 
+
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  unite(oral_end, starts_with("oral_end"),
+  unite(steroid_iv, starts_with("steroid_iv"),
         sep = "_",
         remove = TRUE,
-        na.rm = TRUE) %>%
-  unite(oral_code, starts_with("oral_code"),
+        na.rm = TRUE) 
+
+# Claim Procedure Data ------------------------------------------------------
+
+claim_procedure_data %>% glimpse()
+claim_procedure_data %>% colnames()
+unique(claim_procedure_data$診療行為)
+
+claim_procedure_data1 <- claim_procedure_data %>% 
+  rename(id = "患者ID",
+         adm = "対象日", # for joining
+         code = "診療行為コード",
+         name = "診療行為") %>% 
+  mutate(adm = ymd(adm))
+claim_procedure_data_selected1 <- inner_join(claim_procedure_data1, key, by = c("id","adm"))
+claim_procedure_data_selected1 <- claim_procedure_data_selected1 %>% 
+  arrange(id, adm) %>% 
+  distinct(id, adm, .keep_all=TRUE) %>% 
+  pivot_wider(names_from = name,
+              values_from = name,
+              names_prefix = "procedure") %>% 
+  unite(procedure1, starts_with("procedure"),
         sep = "_",
         remove = TRUE,
-        na.rm = TRUE) %>%
-  unite(oral_name, starts_with("oral_name"),
+        na.rm = TRUE) 
+unique(claim_procedure_data_selected1$procedure1)
+
+claim_procedure_data2 <- claim_procedure_data %>% 
+  rename(id = "患者ID",
+         adm = "対象日", # for joining
+         code = "診療行為コード",
+         name = "診療行為") %>% 
+  mutate(adm = ymd(adm))
+claim_procedure_data_selected2 <- inner_join(claim_procedure_data2, key, by = c("id","adm"))
+claim_procedure_data_selected2 <- claim_procedure_data_selected2 %>% 
+  arrange(id, adm) %>% 
+  distinct(id, adm, .keep_all=TRUE) %>% 
+  pivot_wider(names_from = name,
+              values_from = name,
+              names_prefix = "procedure") %>% 
+  unite(procedure2, starts_with("procedure"),
         sep = "_",
         remove = TRUE,
-        na.rm = TRUE) %>%
-  unite(oral_dose, starts_with("oral_dose"),
+        na.rm = TRUE) 
+unique(claim_procedure_data_selected2$procedure2)
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, claim_procedure_data_selected1, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, claim_procedure_data_selected2, by = c("id","adm")) 
+
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  unite(procedure, starts_with("procedure"),
         sep = "_",
         remove = TRUE,
-        na.rm = TRUE) %>% 
-  unite(oral_department, starts_with("oral_department"),
-        sep = "_",
-        remove = TRUE,
-        na.rm = TRUE)
+        na.rm = TRUE) 
 
+# EMR Laboratory Data -----------------------------------------------------
 
-# EMR Disease Data --------------------------------------------------------
+emr_lab_data %>% glimpse()
+emr_lab_data %>% colnames()
+unique(emr_lab_data$検査名_英語)
 
-# This dataset is used for the patient selection.
+emr_lab_data1 <- emr_lab_data %>% 
+  rename(id = "患者ID",
+         adm = "検査日", # for joining
+         name = "検査名_英語",
+         data = "結果") %>% 
+  select(id, adm, name, data) %>% 
+  mutate(adm = ymd(adm))
+emr_lab_data1_selected1 <- inner_join(emr_lab_data1, key, by = c("id","adm"))
+emr_lab_data1_selected1 <- emr_lab_data1_selected1 %>% 
+  arrange(id, adm) %>% 
+  distinct(id, adm, name, .keep_all=TRUE) %>% 
+  pivot_wider(names_from = name,
+              values_from = data)
 
-emr_disease_data %>% glimpse()
-emr_disease_data %>% colnames()
-emr_disease_data_main <- emr_disease_data %>% 
-  filter(主傷病 == 1 & ICD10 == "J441")
-emr_disease_data_main %>% glimpse()
-length(unique(emr_disease_data_main$患者ID))
-emr_disease_data_main_duplicate <- emr_disease_data_main %>% 
-  group_by(患者ID) %>% 
-  filter(n() >= 2) %>% 
-  arrange(患者ID, 開始日)
-emr_disease_data_main_duplicate %>% glimpse()
-length(unique(emr_disease_data_main_duplicate$患者ID))
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, emr_lab_data1_selected1, by = c("id","adm")) 
 
-# Patient Data ------------------------------------------------------------
+emr_lab_data2 <- emr_lab_data %>% 
+  rename(id = "患者ID",
+         adm = "検査日", # for joining
+         name = "検査名_英語",
+         data = "結果") %>% 
+  select(id, adm, name, data) %>% 
+  mutate(adm = ymd(adm))
+emr_lab_data2_selected2 <- inner_join(emr_lab_data2, key, by = c("id","adm"))
+emr_lab_data2_selected2 <- emr_lab_data2_selected2 %>% 
+  arrange(id, adm) %>% 
+  distinct(id, adm, name, .keep_all=TRUE) %>% 
+  pivot_wider(names_from = name,
+              values_from = data)
 
-# This is all the patient data regardless of the disease name!
-
-patient_data %>% glimpse()
-length(unique(patient_data$患者ID))
-patient_data %>% colnames()
-# check the patient enrollment period
-describe(patient_data$`観察期間開始日(EMR)`)
-describe(patient_data$`観察期間開始日(レセプト)`)
-describe(patient_data$`観察期間開始日(DPC)`)
-
-# EMR Admission Data ---------------------------------------------------------------
-
-emr_admission_data
-
-# Claim Disease Code ------------------------------------------------------
-
-claim_disease_data %>% glimpse()
-
-
-
+dpc_ef1_data_selected_with_blank <- dpc_ef1_data_selected %>% 
+  filter(is.na(DIFWBC) | is.na(ALB) | is.na(BUN) | is.na(WBC) | is.na(CRP))
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, emr_lab_data1_selected2, by = c("id","adm")) 
