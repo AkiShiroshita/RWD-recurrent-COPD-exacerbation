@@ -87,16 +87,16 @@ length(unique(dpc_ef1_data_duplicate$id))
 
 # extract the information of "様式1" among the included patients
 
-dpc_ef1_data <- dpc_ef1_data %>% 
+dpc_ef1_data_all <- dpc_ef1_data %>% 
   arrange(患者ID, 入院日) %>% 
   rename(id = "患者ID",
          adm = "入院日") %>%
   mutate(adm = ymd(adm))
 
-dpc_ef1_data_selected_without_c <- dpc_ef1_data_selected_with_c <- dpc_ef1_data_selected <- inner_join(dpc_ef1_data, dpc_ef1_data_duplicate, by = c("id", "adm"))
+dpc_ef1_data_selected_without_c <- dpc_ef1_data_selected_with_c <- dpc_ef1_data_selected <- inner_join(dpc_ef1_data_all, dpc_ef1_data_duplicate, by = c("id", "adm"))
 dpc_ef1_data_selected_without_c %>% colnames()
 dpc_ef1_data_selected_without_c <- dpc_ef1_data_selected_without_c %>% 
-  select(1,2,9,10) %>% 
+  select(1,2,9,10,12,13) %>% 
   distinct(id, adm, 項目名, .keep_all=TRUE) %>% 
   pivot_wider(names_from = 項目名,
               values_from = データ)
@@ -105,7 +105,7 @@ dpc_ef1_data_selected_without_c <- dpc_ef1_data_selected_without_c %>%
   select(id,adm,性別,主傷病に対するICD10コード,主傷病名,入院の契機となった傷病名に対するICD10コード,
          入院の契機となった傷病名,医療資源を最も投入した傷病名に対するICD10コード,医療資源を最も投入した傷病名,
          退院時のADLスコア,入院時意識障害がある場合のJCS,退院時意識障害がある場合のJCS,`Hugh-Jones分類`,
-         肺炎の重症度分類,入院時のADLスコア,喫煙指数,BMI,入院年月日,救急車による搬送の有無,退院年月日,
+         肺炎の重症度分類,入院時のADLスコア,喫煙指数,BMI,救急車による搬送の有無,退院年月日,
          退院先,退院時転帰,`24時間以内の死亡の有無`,入院経路,医療介護関連肺炎に該当の有無)
 dpc_ef1_data_selected_without_c$入院時のADLスコア <- sapply(strsplit(dpc_ef1_data_selected_without_c$入院時のADLスコア,""), function(x) sum(as.numeric(x))) 
 dpc_ef1_data_selected_without_c$退院時のADLスコア <- sapply(strsplit(dpc_ef1_data_selected_without_c$退院時のADLスコア,""), function(x) sum(as.numeric(x))) 
@@ -431,15 +431,15 @@ anti_pseudo_oral_use2 <- anti_pseudo_oral_use %>%
   select(1,3,4,5,7,8,9) %>% 
   rename(id = "患者ID",
          adm = "開始日", # for joining
-         iv_end2 = "終了日",
-         iv_code2 = "薬価コード",
-         iv_name2 = "薬剤名",
-         iv_dose2 = "用量",
-         iv_department2 = "診療科") %>% 
+         oral_end2 = "終了日",
+         oral_code2 = "薬価コード",
+         oral_name2 = "薬剤名",
+         oral_dose2 = "用量",
+         oral_department2 = "診療科") %>% 
   mutate(adm = ymd(adm),
          adm = adm - 1,
-         iv_end2 = ymd(iv_end2)) %>% 
-  distinct(id, adm, iv_code2, .keep_all=TRUE)
+         oral_end2 = ymd(oral_end2)) %>% 
+  distinct(id, adm, oral_code2, .keep_all=TRUE)
 anti_pseudo_oral_use2 <- inner_join(key, anti_pseudo_oral_use2, by = c("id","adm")) 
 anti_pseudo_oral_use2_wide <- anti_pseudo_oral_use2 %>% 
   select(id,adm,oral_code2) %>% 
@@ -726,7 +726,11 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
   unite(procedure, starts_with("procedure"),
         sep = "_",
         remove = TRUE,
-        na.rm = TRUE) 
+        na.rm = TRUE) %>% 
+  unite(procedure_code, starts_with("code"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE)
 
 # EMR Laboratory Data -----------------------------------------------------
 
@@ -773,9 +777,78 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
          bun = ifelse(is.na(firstBUN), firstBUN, secondBUN),
          crp = ifelse(is.na(firstCRP), firstCRP, secondCRP),
          difwbc = ifelse(is.na(firstDIFWBC), firstDIFWBC, secondDIFWBC)) %>% 
-  select(-firstWBC, -firstALB, -firstBUN, -firstCRP ,-secondDIFWBC, -secondWBC, -secondALB, -secondCRP)
+  select(-firstDIFWBC, -firstALB, -firstBUN, -firstCRP , -firstWBC, 
+         -secondDIFWBC, -secondWBC, -secondALB, -secondCRP, -secondBUN)
 
 # Overall cleaning --------------------------------------------------------
 
 dpc_ef1_data_selected %>% colnames()
-dpc_ef1_data_selected %>% write.csv("rwd_copd_data.csv")
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  rename(sex = "性別",
+         main_code = "主傷病に対するICD10コード",
+         main = "主傷病名",
+         prep_code = "入院の契機となった傷病名に対するICD10コード",
+         prep = "入院の契機となった傷病名",
+         reso_code = "医療資源を最も投入した傷病名に対するICD10コード",
+         reso = "医療資源を最も投入した傷病名",
+         disc_adl = "退院時のADLスコア",
+         adm_jcs = "入院時意識障害がある場合のJCS",
+         disc_jcs = "退院時意識障害がある場合のJCS",
+         hugh_johns = "Hugh-Jones分類",
+         severity = "肺炎の重症度分類",
+         adm_adl = "入院時のADLスコア",
+         smk_index = "喫煙指数",
+         bmi = "BMI",
+         amb = "救急車による搬送の有無",
+         disc = "退院年月日",
+         disc_to = "退院先",
+         prognosis = "退院時転帰",
+         death24 = "24時間以内の死亡の有無",
+         route = "入院経路",
+         nhcap = "医療介護関連肺炎に該当の有無",
+         
+         com1 = "入院時併存症名_1",
+         com2 = "入院時併存症名_2",
+         com3 = "入院時併存症名_3",
+         com4 = "入院時併存症名_4",
+         com5 = "入院時併存症名_5",
+         com6 = "入院時併存症名_6",
+         com7 = "入院時併存症名_7",
+         com8 = "入院時併存症名_8",
+         com9 = "入院時併存症名_9",
+         com10 = "入院時併存症名_10",
+         subs1 = "入院後発症疾患名_1",
+         subs2 = "入院後発症疾患名_2",
+         subs3 = "入院後発症疾患名_3",
+         subs4 = "入院後発症疾患名_4",
+         subs5 = "入院後発症疾患名_5",
+         subs6 = "入院後発症疾患名_6",
+         subs7 = "入院後発症疾患名_7",
+         subs8 = "入院後発症疾患名_8",
+         subs9 = "入院後発症疾患名_9",
+         subs10 = "入院後発症疾患名_10",
+         
+         com_code1 = "入院時併存症名に対するICD10コード_1",
+         com_code2 = "入院時併存症名に対するICD10コード_2",
+         com_code3 = "入院時併存症名に対するICD10コード_3",
+         com_code4 = "入院時併存症名に対するICD10コード_4",
+         com_code5 = "入院時併存症名に対するICD10コード_5",
+         com_code6 = "入院時併存症名に対するICD10コード_6",
+         com_code7 = "入院時併存症名に対するICD10コード_7",
+         com_code8 = "入院時併存症名に対するICD10コード_8",
+         com_code9 = "入院時併存症名に対するICD10コード_9",
+         com_code10 = "入院時併存症名に対するICD10コード_10",
+         subs_code1 = "入院後発症疾患名に対するICD10コード_1",
+         subs_code2 = "入院後発症疾患名に対するICD10コード_2",
+         subs_code3 = "入院後発症疾患名に対するICD10コード_3",
+         subs_code4 = "入院後発症疾患名に対するICD10コード_4",
+         subs_code5 = "入院後発症疾患名に対するICD10コード_5",
+         subs_code6 = "入院後発症疾患名に対するICD10コード_6",
+         subs_code7 = "入院後発症疾患名に対するICD10コード_7",
+         subs_code8 = "入院後発症疾患名に対するICD10コード_8",
+         subs_code9 = "入院後発症疾患名に対するICD10コード_9",
+         subs_code10 = "入院後発症疾患名に対するICD10コード_10",
+         
+         )
+
+dpc_ef1_data_selected %>% write_rds("output/cleaned_data.rds", compress = "gz")
