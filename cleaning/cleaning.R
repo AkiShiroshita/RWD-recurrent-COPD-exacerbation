@@ -737,33 +737,45 @@ unique(emr_lab_data$検査名_英語)
 emr_lab_data1 <- emr_lab_data %>% 
   rename(id = "患者ID",
          adm = "検査日", # for joining
-         name = "検査名_英語",
-         data = "結果") %>% 
-  select(id, adm, name, data) %>% 
+         name1 = "検査名_英語",
+         data1 = "結果") %>% 
+  select(id, adm, name1, data1) %>% 
   mutate(adm = ymd(adm))
 emr_lab_data1_selected1 <- inner_join(emr_lab_data1, key, by = c("id","adm"))
 emr_lab_data1_selected1 <- emr_lab_data1_selected1 %>% 
   arrange(id, adm) %>% 
-  distinct(id, adm, name, .keep_all=TRUE) %>% 
-  pivot_wider(names_from = name,
-              values_from = data)
+  distinct(id, adm, name1, .keep_all=TRUE) %>% 
+  pivot_wider(names_from = name1,
+              values_from = data1,
+              names_prefix = "first")
 
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, emr_lab_data1_selected1, by = c("id","adm")) 
 
 emr_lab_data2 <- emr_lab_data %>% 
   rename(id = "患者ID",
          adm = "検査日", # for joining
-         name = "検査名_英語",
-         data = "結果") %>% 
-  select(id, adm, name, data) %>% 
+         name2 = "検査名_英語",
+         data2 = "結果") %>% 
+  select(id, adm, name2, data2) %>% 
   mutate(adm = ymd(adm))
 emr_lab_data2_selected2 <- inner_join(emr_lab_data2, key, by = c("id","adm"))
 emr_lab_data2_selected2 <- emr_lab_data2_selected2 %>% 
   arrange(id, adm) %>% 
-  distinct(id, adm, name, .keep_all=TRUE) %>% 
-  pivot_wider(names_from = name,
-              values_from = data)
+  distinct(id, adm, name2, .keep_all=TRUE) %>% 
+  pivot_wider(names_from = name2,
+              values_from = data2,
+              names_prefix = "second")
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, emr_lab_data2_selected2, by = c("id","adm")) 
 
-dpc_ef1_data_selected_with_blank <- dpc_ef1_data_selected %>% 
-  filter(is.na(DIFWBC) | is.na(ALB) | is.na(BUN) | is.na(WBC) | is.na(CRP))
-dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, emr_lab_data1_selected2, by = c("id","adm")) 
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  mutate(wbc = ifelse(is.na(firstWBC), firstWBC, secondWBC),
+         alb = ifelse(is.na(firstALB), firstALB, secondALB),
+         bun = ifelse(is.na(firstBUN), firstBUN, secondBUN),
+         crp = ifelse(is.na(firstCRP), firstCRP, secondCRP),
+         difwbc = ifelse(is.na(firstDIFWBC), firstDIFWBC, secondDIFWBC)) %>% 
+  select(-firstWBC, -firstALB, -firstBUN, -firstCRP ,-secondDIFWBC, -secondWBC, -secondALB, -secondCRP)
+
+# Overall cleaning --------------------------------------------------------
+
+dpc_ef1_data_selected %>% colnames()
+dpc_ef1_data_selected %>% write.csv("rwd_copd_data.csv")
