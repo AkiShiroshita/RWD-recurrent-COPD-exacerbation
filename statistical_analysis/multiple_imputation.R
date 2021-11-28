@@ -4,7 +4,6 @@
 packages = c("survival",
              "mice",
              "norm2",
-             "mitools",
              "tidyverse",
              "lubridate")
 package.check <- lapply(packages, FUN = function(x){
@@ -79,9 +78,11 @@ for (i in 1:df_mi100$m) {
 
 miinf_random <- miInference(est, se)
 print(miinf_random)
-# lower limit
+
+# 95% lower limit
 lower <- miinf_random[["est"]] - 1.96 * miinf_random[["std.err"]]
-# upper limit
+
+# 95% upper limit
 upper <- miinf_random[["est"]] + 1.96 * miinf_random[["std.err"]]
 
 exp(miinf_random$est) 
