@@ -2,8 +2,10 @@
 # Set-up packages ---------------------------------------------------------
 
 packages = c("survival",
-             "survminer",
-             "naniar")
+             "mice",
+             "norm2",
+             "tidyverse",
+             "lubridate")
 package.check <- lapply(packages, FUN = function(x){
   if (!require(x, character.only = TRUE)){
     install.packages(x, dependencies = TRUE)
@@ -90,8 +92,10 @@ cox.zph(fit_fixed_comp)
 scatter.smooth(residuals(fit_fixed_comp, type="deviance"))
 abline(h=0,lty=3,col=2)
 
-summary(fit_fixed_comp)
-confint(fit_fixed_comp)
+result_fixed <- summary(fit_fixed_comp)
+exp(result_fixed[["coefficients"]][1,1])
+exp(result_fixed[["coefficients"]][1,3])
+exp(confint(fit_fixed_comp))
 
 ## count: categorical variable (1 < count < 6)
 ## not converge
@@ -127,5 +131,6 @@ fit_frailty_comp <- coxph(obj_frailty_comp ~ anti_pseudo + sex + bmi + adm_adl +
                           data = df_comp_random)
 result_frailty <- summary(fit_frailty_comp)
 exp(result_frailty[["coefficients"]][1,1])
+exp(result_frailty[["coefficients"]][1,3])
 exp(confint(fit_frailty_comp))
 
