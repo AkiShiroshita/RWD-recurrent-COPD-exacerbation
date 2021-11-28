@@ -2,7 +2,8 @@
 # Set-up packages ---------------------------------------------------------
 
 packages = c("survival",
-             "mice")
+             "mice",
+             "norm2")
 package.check <- lapply(packages, FUN = function(x){
   if (!require(x, character.only = TRUE)){
     install.packages(x, dependencies = TRUE)
@@ -12,18 +13,8 @@ package.check <- lapply(packages, FUN = function(x){
 
 # Multiple imputation -----------------------------------------------------
 
-df_stats %>% glimpse()
-df_mi <- df_stats %>%
-  mutate(id = as.factor(id),
-         los = as.numeric(los),
-         death = as.factor(death),
-         bmi = as.numeric(bmi),
-         anti_pseudo = as.factor(anti_pseudo),
-         oxy = as.factor(oxy),
-         wbc = as.numeric(wbc),
-         alb = as.numeric(alb),
-         bun = as.numeric(bun),
-         crp = as.numeric(crp))
+df_summary %>% glimpse()
+df_mi <- df_summary
 df_mi0 <- mice(df_mi, maxit = 0)
 df_mi0$method
 df_mi0$predictorMatrix
@@ -32,27 +23,55 @@ predmt[1, ] <- predmt[, 1] <- 0
 predmt
 df_mi100 <- mice(df_mi, m = 100, predictorMatrix = predmt, maxit = 20, printFlag = FALSE, seed = 1234)
 
+df_mi100 %>% write_rds("output/df_mi100.rds", compress = "gz")
+
 # Fixed effects model -----------------------------------------------------
 
+df_mi100 <- read_rds("output/df_mi100.rds")
+
 est <- se <- vector(length = df_mi100$m, mode = "list")
+
 for (i in 1:df_mi100$m) {
   com <- complete(df_mi100, i)
   com <- com %>% 
-    mutate(bmi = weight/(height/100)^2) %>% 
-    mutate(hr = if_else(hr >= 109, 1, 0))
-  fit <- glmer(los ~ broad + age + bmi + count + o2 + hot + adl + ams + rr + hr + steroid + hospital + (1|id),
-               com,
-               family = Gamma(link = "log"))
-  s <- summary(fit)
-  est[[i]] <- s[["coefficients"]][2, 1]
-  se[[i]] <- s[["coefficients"]][2, 2]
+    mutate(death = as.integer(death)
+    )
+  
+  obj_fixed_mi <- Surv(com$los, com$death)
+  fit_fixed_mi <- coxph(obj_fixed_mi ~ anti_pseudo + sex + bmi + adm_adl + steroid + adm_jcs + oxy + crp + alb + bun + count + strata(id),
+                          data = com)
+  s <- summary(fit_fixed_mi)
+  est[[i]] <- s[["coefficients"]][1, 1]
+  se[[i]] <- s[["coefficients"]][1, 2]
 }
-miinf <- miInference(est, se)
-print(miinf)
-exp(miinf$est) 
-exp(miinf$std.err) 
 
+miinf_fixed <- miInference(est, se)
+print(miinf_fixed)
+exp(miinf_fixed$est) 
+exp(miinf_fixed$std.err) 
 
 # Frailty model -----------------------------------------------------------
 
+df_mi100 <- read_rds("output/df_mi100.rds")
+
+est <- se <- vector(length = df_mi100$m, mode = "list")
+
+for (i in 1:df_mi100$m) {
+  com <- complete(df_mi100, i)
+  com <- com %>% 
+    mutate(death = as.integer(death)
+    )
+  
+  obj_random_mi <- Surv(com$los, com$death)
+  fit_random_mi <- coxph(obj_random_mi ~ anti_pseudo + sex + bmi + adm_adl + steroid + adm_jcs + oxy + crp + alb + bun + count + frailty(id),
+                        data = com)
+  s <- summary(fit_random_mi)
+  est[[i]] <- s[["coefficients"]][1, 1]
+  se[[i]] <- s[["coefficients"]][1, 2]
+}
+
+miinf_random <- miInference(est, se)
+print(miinf_random)
+exp(miinf_random$est) 
+exp(miinf_random$std.err) 
 

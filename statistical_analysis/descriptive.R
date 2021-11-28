@@ -62,6 +62,7 @@ df_summary <- df %>%
          anti_pseudo = ifelse(anti_pseudo_oral==1 | anti_pseudo_iv==1, 1, 0),
          anti_pseudo = as.factor(anti_pseudo),
          steroid = if_else(steroid_oral==1 | steroid_iv==1, 1, 0),
+         steroid = as.factor(steroid),
          oxy = as.factor(oxy),
          wbc = as.numeric(wbc),
          alb = as.numeric(alb),
@@ -97,3 +98,5 @@ ggplot_shiny(data = df_summary)
 
 miss <- miss_var_summary(df_summary)
 miss        
+
+df_summary %>% write_rds("output/df_summary.rds", compress = "gz")
