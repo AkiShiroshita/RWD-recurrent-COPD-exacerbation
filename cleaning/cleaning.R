@@ -12,7 +12,6 @@ packages = c("devtools",
              "lubridate",
              "psych",
              "ggplot2",
-             "tidylog",
              "ggplotgui",
              "ggthemes",
              "arsenal")
@@ -30,16 +29,16 @@ rm(list=ls())
 
 setwd("input")
 patient_data = fread("2021102512_1_Patient_data_2021_002_SCE.csv.gz")
-emr_disease_data = fread("2021102512_2_EMR_Disease_data_2021_002_SCE.csv.gz")
+#emr_disease_data = fread("2021102512_2_EMR_Disease_data_2021_002_SCE.csv.gz")
 emr_drug_data = fread("2021102512_3_EMR_Drug_data_2021_002_SCE.csv.gz")
-emr_admission_data = fread("2021102512_4_EMR_Admission_data_2021_002_SCE.csv.gz")
+#emr_admission_data = fread("2021102512_4_EMR_Admission_data_2021_002_SCE.csv.gz")
 emr_lab_data = fread("2021102512_5_EMR_Laboratory_data_2021_002_SCE.csv.gz")
-claim_disease_data = fread("2021102512_51_Claim_Disease_data_2021_002_SCE.csv.gz")
+#claim_disease_data = fread("2021102512_51_Claim_Disease_data_2021_002_SCE.csv.gz")
 claim_procedure_data = fread("2021102512_52_Claim_Procedure_data_2021_002_SCE.csv.gz")
 dpc_ef1_data = fread("2021102512_71_DPC_FF1_data_2021_002_SCE.csv.gz")
-drug_codelist = fread("2021102512_101_Drug_codelist_2021_002_SCE.csv.gz")
-disease_codelist = fread("2021102512_103_Disease_codelist_2021_002_SCE.csv.gz")
-procedure_codelist = fread("2021102512_105_Procedure_codelist_2021_002_SCE.csv.gz")
+#drug_codelist = fread("2021102512_101_Drug_codelist_2021_002_SCE.csv.gz")
+#disease_codelist = fread("2021102512_103_Disease_codelist_2021_002_SCE.csv.gz")
+#procedure_codelist = fread("2021102512_105_Procedure_codelist_2021_002_SCE.csv.gz")
 
 setwd("C:/Users/akihi/Downloads/RWD-recurrent-COPD-exacerbation")
 
@@ -106,7 +105,7 @@ dpc_ef1_data_selected_without_c <- dpc_ef1_data_selected_without_c %>%
          入院の契機となった傷病名,医療資源を最も投入した傷病名に対するICD10コード,医療資源を最も投入した傷病名,
          退院時のADLスコア,入院時意識障害がある場合のJCS,退院時意識障害がある場合のJCS,`Hugh-Jones分類`,
          肺炎の重症度分類,入院時のADLスコア,喫煙指数,BMI,救急車による搬送の有無,退院年月日,
-         退院先,退院時転帰,`24時間以内の死亡の有無`,入院経路,医療介護関連肺炎に該当の有無)
+         退院先,退院時転帰,`24時間以内の死亡の有無`,入院経路,医療介護関連肺炎に該当の有無, diff_time)
 dpc_ef1_data_selected_without_c$入院時のADLスコア <- sapply(strsplit(dpc_ef1_data_selected_without_c$入院時のADLスコア,""), function(x) sum(as.numeric(x))) 
 dpc_ef1_data_selected_without_c$退院時のADLスコア <- sapply(strsplit(dpc_ef1_data_selected_without_c$退院時のADLスコア,""), function(x) sum(as.numeric(x))) 
 
@@ -203,14 +202,14 @@ length(unique(key$id))
 # EMR Admission Data ------------------------------------------------------
 
 # just for justification
-emr_admission_data %>% glimpse()
-emr_admission_data <- emr_admission_data %>% 
-  rename(id = "患者ID",
-         adm = "入院日",
-         ent = "退院日") %>% 
-  mutate(adm = ymd(adm),
-         ent = ymd(ent))
-inner_join(emr_admission_data, key, by = c("id","adm")) # some conflicts
+#emr_admission_data %>% glimpse()
+#emr_admission_data <- emr_admission_data %>% 
+#  rename(id = "患者ID",
+#         adm = "入院日",
+#         ent = "退院日") %>% 
+#  mutate(adm = ymd(adm),
+#         ent = ymd(ent))
+#inner_join(emr_admission_data, key, by = c("id","adm")) # some conflicts
 
 # I guess this is caused by the data storage problems in EMR admission Data
 
