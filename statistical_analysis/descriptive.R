@@ -68,16 +68,16 @@ df_summary <- df %>%
          alb = as.numeric(alb),
          bun = as.numeric(bun),
          crp = as.numeric(crp)) %>% 
-  select(id, los, death, sex, bmi, adm_adl, disc_adl, adm_jcs, disc_jcs, anti_pseudo, steroid, oxy, wbc, alb, bun, crp) %>% 
+  select(id, los, death, sex, bmi, adm_adl, disc_adl, adm_jcs, disc_jcs, anti_pseudo, steroid, oxy, wbc, alb, bun, crp, hugh_johns) %>% 
   group_by(id) %>% 
   mutate(count = row_number()) %>% 
   ungroup()
 df_summary %>% glimpse()
 df_summary %>% colnames()
 
-vars <- c("count", "sex", "bmi", "adm_adl", "disc_adl", "adm_jcs",
+vars <- c("count", "sex", "bmi", "adm_adl", "hugh-johns", "disc_adl", "adm_jcs",
           "disc_jcs", "oxy", "wbc", "alb", "bun", "crp", "anti_pseudo", "steroid", "los", "death")
-factorVars <- c("death", "sex", "adm_adl", "disc_adl", "adm_jcs",
+factorVars <- c("death", "sex", "adm_adl", "hugh-johns", "disc_adl", "adm_jcs",
           "disc_jcs", "anti_pseudo", "steroid", "oxy", "count")
 table1 <- CreateTableOne(vars = vars,
                          data = df_summary,
@@ -100,3 +100,84 @@ miss <- miss_var_summary(df_summary)
 miss        
 
 df_summary %>% write_rds("output/df_summary.rds", compress = "gz")
+
+# Abx change --------------------------------------------------------------
+
+id_key <- key %>% 
+  distinct(id)
+
+emr_drug_data %>% colnames()
+
+abx_use_change <- emr_drug_data %>% 
+  select(1,3,4,8) %>% 
+  rename(id = "患者ID",
+         start = "開始日",
+         code = "薬価コード",
+         name = "薬剤名") %>% 
+  distinct(id, name, .keep_all=TRUE) %>% 
+  mutate(pseudo_tag = ifelse(str_detect(code, c(filter_anti_pseudo_oral_code, filter_anti_pseudo_oral_code)), 1, 0)) %>% 
+  distinct(id, pseudo_tag, .keep_all=TRUE) %>% 
+  group_by(id) %>% 
+  filter(n() >= 2) %>% 
+  mutate(lag_pseudo_tag = lag(pseudo_tag),
+         lag_start = lag(start),
+         diff = pseudo_tag - lag_pseudo_tag,
+         diff_time = start - lag_start) %>% 
+  filter(0 < diff_time & diff_time <= 7) %>% 
+  ungroup()
+
+selected_abx_use_change <- inner_join(id_key, abx_use_change, by = "id")
+selected_abx_use_change %>%
+  filter(diff == 1)
+  
+
+# Total procedure ---------------------------------------------------------
+
+total_claim_procedure_data <- claim_procedure_data %>% 
+  rename(id = "患者ID",
+         day = "対象日",
+         code = "診療行為コード",
+         name = "診療行為") %>% 
+  distinct(id, name, .keep_all=TRUE) 
+selected_total_claim_procedure_data <- inner_join(id_key, total_claim_procedure_data, by = "id")
+unique(selected_total_claim_procedure_data$name)
+ventilation <- selected_total_claim_procedure_data %>% 
+  filter(name == "人工呼吸" | name == "人工呼吸（５時間超）" | name == "救命のための気管内挿管" | name == "人工呼吸（鼻マスク式人工呼吸器）" | 
+           name == "人工呼吸（鼻マスク式人工呼吸器）（５時間超）" | name == "人工呼吸（閉鎖循環式麻酔装置）（５時間超）" | name == "人工呼吸（閉鎖循環式麻酔装置）" | 
+           name == "ＣＰＡＰ" | name == "ＣＰＡＰ（５時間超）" | name == "ＩＭＶ（５時間超）") %>% 
+  distinct(id, .keep_all=TRUE) %>% 
+  select(-name, -code)
+# we cannot differentiate "new" from "old"
+
+dialysis <- selected_total_claim_procedure_data %>% 
+  filter(name == "持続緩徐式血液濾過" | name == "障害者等加算（持続緩徐式血液濾過）" | name == "人工腎臓（その他）" | name == "透析液水質確保加算（人工腎臓）" | 
+           name == "人工腎臓（導入期）加算"  | name == "人工腎臓（慢性維持透析）（４時間未満）" | name == "透析液水質確保加算２" | 
+           name == "障害者等加算（人工腎臓）" | name == "人工腎臓（慢性維持透析１）（４時間未満）"  | name == "慢性維持透析濾過加算（人工腎臓）" |
+           name == "人工腎臓（慢性維持透析１）（４時間以上５時間未満）" | name == "時間外・休日加算（人工腎臓）" | name ==  "導入期加算２（人工腎臓）" |
+           name == "人工腎臓（慢性維持透析濾過）（複雑）" | name == "人工腎臓（慢性維持透析）（４時間以上５時間未満）" | name == "透析液水質確保加算１" |
+           name == "人工腎臓（慢性維持透析）（５時間以上）" | name == "人工腎臓（慢性維持透析１）（４時間未満）（イを除く）" | name == "人工腎臓（慢性維持透析１）（５時間以上）" | name == "長時間加算（人工腎臓）") %>% 
+  distinct(id, .keep_all=TRUE) %>% 
+  select(-name, -code)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
