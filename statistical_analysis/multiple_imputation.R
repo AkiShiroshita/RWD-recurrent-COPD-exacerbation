@@ -18,7 +18,8 @@ package.check <- lapply(packages, FUN = function(x){
 getwd()
 df_summary <- read_rds("output/df_summary.rds")
 df_summary %>% glimpse()
-df_mi <- df_summary
+df_mi <- df_summary %>% 
+  select(-disc_adl, -disc_jcs)
 df_mi0 <- mice(df_mi, maxit = 0)
 df_mi0$method
 df_mi0$predictorMatrix
@@ -34,6 +35,9 @@ df_mi100 %>% write_rds("output/df_mi100.rds", compress = "gz")
 # not converged
 
 df_mi100 <- read_rds("output/df_mi100.rds")
+
+com1 <- complete(df_mi100, 1)
+com1 %>% glimpse()
 
 est <- se <- vector(length = df_mi100$m, mode = "list")
 

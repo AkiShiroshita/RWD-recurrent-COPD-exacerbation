@@ -28,7 +28,7 @@ rm(list=ls())
 # Import data -------------------------------------------------------------
 
 setwd("input")
-patient_data = fread("2021102512_1_Patient_data_2021_002_SCE.csv.gz")
+#patient_data = fread("2021102512_1_Patient_data_2021_002_SCE.csv.gz")
 #emr_disease_data = fread("2021102512_2_EMR_Disease_data_2021_002_SCE.csv.gz")
 emr_drug_data = fread("2021102512_3_EMR_Drug_data_2021_002_SCE.csv.gz")
 #emr_admission_data = fread("2021102512_4_EMR_Admission_data_2021_002_SCE.csv.gz")
@@ -47,10 +47,13 @@ setwd("C:/Users/akihi/Downloads/RWD-recurrent-COPD-exacerbation")
 # This dataset is used for the patient selection.
 
 dpc_ef1_data %>% glimpse()
-dpc_ef1_data %>% colnames()
+dpc_ef1_data %>% colnames
 unique(dpc_ef1_data$項目名)
 
 length(unique(dpc_ef1_data$患者ID)) #38767
+
+dpc_ef1_data %>% distinct(患者ID)
+dpc_ef1_data %>% distinct(患者ID, 入院日)
 
 # check the number of the included patients 
 
@@ -103,7 +106,7 @@ dpc_ef1_data_selected_without_c <- dpc_ef1_data_selected_without_c %>%
               values_from = データ)
 dpc_ef1_data_selected_without_c %>% colnames()
 dpc_ef1_data_selected_without_c <- dpc_ef1_data_selected_without_c %>% 
-  select(id,adm,性別,主傷病に対するICD10コード,主傷病名,入院の契機となった傷病名に対するICD10コード,
+  select(id,adm,性別,生年月日,主傷病に対するICD10コード,主傷病名,入院の契機となった傷病名に対するICD10コード,
          入院の契機となった傷病名,医療資源を最も投入した傷病名に対するICD10コード,医療資源を最も投入した傷病名,
          退院時のADLスコア,入院時意識障害がある場合のJCS,退院時意識障害がある場合のJCS,`Hugh-Jones分類`,
          肺炎の重症度分類,入院時のADLスコア,喫煙指数,BMI,救急車による搬送の有無,退院年月日,
@@ -227,7 +230,7 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
            (
            ((str_detect(dpc_ef1_data_selected$主傷病に対するICD10コード,"J1")) |
            (str_detect(dpc_ef1_data_selected$入院の契機となった傷病名に対するICD10コード,"J1")) |
-           (str_detect(dpc_ef1_data_selected$医療資源を最も投入した傷病名に対するICD10コード,"J09"))) &
+           (str_detect(dpc_ef1_data_selected$医療資源を最も投入した傷病名に対するICD10コード,"J1"))) &
                  
            ((str_detect(dpc_ef1_data_selected$入院時併存症名に対するICD10コード_1,"J44")) |
            (str_detect(dpc_ef1_data_selected$入院時併存症名に対するICD10コード_2,"J44")) |
@@ -283,6 +286,11 @@ key <- dpc_ef1_data_selected %>%
   distinct(id,adm)
 
 length(unique(key$id)) 
+
+# Patient data ------------------------------------------------------------
+
+#patient_data %>% glimpse()
+#patient_data %>% colnames()
 
 # EMR Admission Data ------------------------------------------------------
 
@@ -869,6 +877,7 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
 dpc_ef1_data_selected %>% colnames()
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
   rename(sex = "性別",
+         birthday = "生年月日",
          main_code = "主傷病に対するICD10コード",
          main = "主傷病名",
          prep_code = "入院の契機となった傷病名に対するICD10コード",

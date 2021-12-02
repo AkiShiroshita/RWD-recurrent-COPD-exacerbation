@@ -1,0 +1,28 @@
+digraph flowchart {
+  layout=neato;
+
+  node [shape = rectangle]
+  A [pos="0,5!" ,label  = "All-cause hospitalization in the dataset\n - 38767  patients\l - 105564 observations\l"];
+  B [pos="0,3!",label  = "Patients selected on the algorithm\n - 1323 patients\l - 3642 observations\l"];
+  
+  a [pos="0,2!",label = '', shape=invis, width=0, height=0];
+  
+  C [pos="5,2!", label = "Excluded patients\n - 19 in-hospital death within 24 hours\l - 0 transfered to another hospital within 24 hours\l"];
+  
+  b [pos="0,1!",label = '', shape=invis, width=0, height=0]
+  
+  c [pos="-2,1!",label = '', shape=invis, width=0, height=0]
+  d [pos="3,1!",label = '', shape=invis, width=0, height=0]
+  
+  D [pos="-2,0!" ,label = "Anti-pseudomonal antibiotics group\n - 542  patients\l - 923 observations\l"];
+  E [pos="3,0!",label = "Non-anti-pseudomonal antibiotics group\n - 1190  patients\l - 2695 observations\l"];
+
+  A -> B
+  B -> a [dir='none']
+  a -> C 
+  a -> b [dir='none']
+  b -> c [dir='none']
+  b -> d [dir='none']
+  c -> D 
+  d -> E 
+  }
