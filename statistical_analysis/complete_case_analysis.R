@@ -21,7 +21,7 @@ df_summary %>% glimpse()
 df_summary %>% colnames()
 
 df_comp <- df_summary %>%
-  select(-disc_adl, -disc_jcs) %>% 
+  select(-disc) %>% 
   drop_na()
 
 # Kaplan-Meier Method -----------------------------------------------------

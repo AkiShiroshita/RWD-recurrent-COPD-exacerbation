@@ -95,27 +95,24 @@ df_summary <- df %>%
          disc = ymd(disc),
          los = disc - adm + 1,
          los = as.numeric(los),
-         death = ifelse(prognosis==6 | prognosis==7, 1, 0),
+         death = ifelse(prognosis == 6 | prognosis == 7, 1, 0),
          death = as.factor(death),
          direct_death = ifelse(prognosis==6, 1, 0),
-         death = as.factor(direct_death),
+         direct_death = as.factor(direct_death),
          indirect_death = ifelse(prognosis==7, 1, 0),
-         death = as.factor(indirect_death),
-         event = case_when(disc_to == 4 ~ 1,
-                           death == 1 ~ 2,
-                           TRUE ~ 0),
-         event = as.factor(event),
+         indirect_death = as.factor(indirect_death),
          anti_pseudo = ifelse(anti_pseudo_oral==1 | anti_pseudo_iv==1, 1, 0),
          anti_pseudo = as.factor(anti_pseudo),
          steroid = if_else(steroid_oral==1 | steroid_iv==1, 1, 0),
          steroid = as.factor(steroid),
+         hugh_johns = as.numeric(hugh_johns),
          oxy = as.factor(oxy),
          wbc = as.numeric(wbc),
          alb = as.numeric(alb),
          bun = as.numeric(bun),
          crp = as.numeric(crp)) %>% 
-  select(id, adm, los, death, diff_time, age, sex, bmi, adm_adl, disc_adl, adm_jcs, disc_jcs,
-         anti_pseudo, steroid, oxy, wbc, alb, bun, crp, hugh_johns) %>% 
+  select(id, adm, los, death, diff_time, age, sex, bmi, adm_adl, adm_jcs,
+         anti_pseudo, steroid, oxy, wbc, alb, bun, crp, hugh_johns, disc, direct_death, indirect_death) %>% 
   group_by(id) %>% 
   mutate(count = row_number()) %>% 
   ungroup()
@@ -148,6 +145,8 @@ table2 %>%
   print(nonnormal = c("wbc", "alb", "bun", "crp", "los"))
 
 #ggplot_shiny(data = df_summary)
+
+df_summary %>% write_rds("output/df_summary.rds", compress = "gz")
 
 df_summary <- df_summary %>% 
   mutate(anti_pseudo = factor(anti_pseudo,
@@ -208,8 +207,6 @@ plot_grid(graph1, graph2, ncol = 1)
 miss <- miss_var_summary(df_summary)
 miss        
 
-df_summary %>% write_rds("output/df_summary.rds", compress = "gz")
-
 # Abx change --------------------------------------------------------------
 
 emr_drug_data = fread("input/2021102512_3_EMR_Drug_data_2021_002_SCE.csv.gz")
@@ -243,38 +240,63 @@ selected_abx_use_change %>%
 
 # Total procedure ---------------------------------------------------------
 
-total_claim_procedure_data <- claim_procedure_data %>% 
+## mechanical ventilation
+
+total_claim_procedure_venti <- claim_procedure_data %>% 
   rename(id = "患者ID",
          day = "対象日",
          code = "診療行為コード",
          name = "診療行為") %>% 
-  mutate(id = as.character(id))
-selected_total_claim_procedure_data <- inner_join(total_claim_procedure_data, df_summary, by = "id")
-selected_total_claim_procedure_data %>% glimpse()
-selected_total_claim_procedure_data <- selected_total_claim_procedure_data %>% 
-  group_by(id) %>% 
-  muta
+  group_by(id, code) %>% 
+  mutate(id = as.character(id),
+         day = ymd(day),
+         lag_day = lag(day),
+         diff_code = day -lag_day) %>% 
+  filter(diff_code > 1) %>% 
+  ungroup() %>% 
+  select(id, day, code, name)
+
+selected_total_claim_procedure_data_venti <- inner_join(total_claim_procedure_venti, df_summary, by = "id")
+selected_total_claim_procedure_data_venti %>% glimpse()
+selected_total_claim_procedure_data_venti %>% colnames()
 
 ventilation <- selected_total_claim_procedure_data %>% 
   filter(name == "人工呼吸" | name == "人工呼吸（５時間超）" | name == "救命のための気管内挿管" | name == "人工呼吸（鼻マスク式人工呼吸器）" | 
            name == "人工呼吸（鼻マスク式人工呼吸器）（５時間超）" | name == "人工呼吸（閉鎖循環式麻酔装置）（５時間超）" | name == "人工呼吸（閉鎖循環式麻酔装置）" | 
            name == "ＣＰＡＰ" | name == "ＣＰＡＰ（５時間超）" | name == "ＩＭＶ（５時間超）") %>% 
-  distinct(id, .keep_all=TRUE) %>% 
-  select(-name, -code)
+  filter(adm < day & day < disc)
 
 ventilation %>% glimpse()
 
-# we cannot differentiate "new" from "old"
+## dialysis
 
-dialysis <- selected_total_claim_procedure_data %>% 
+total_claim_procedure_dial <- claim_procedure_data %>% 
+  rename(id = "患者ID",
+         day = "対象日",
+         code = "診療行為コード",
+         name = "診療行為") %>% 
+  group_by(id, code) %>% 
+  mutate(id = as.character(id),
+         day = ymd(day),
+         lag_day = lag(day),
+         diff_code = day -lag_day) %>% 
+  filter(diff_code > 3) %>% 
+  ungroup() %>% 
+  select(id, day, code, name)
+
+selected_total_claim_procedure_data_dial <- inner_join(total_claim_procedure_dial, df_summary, by = "id")
+selected_total_claim_procedure_data_dial %>% glimpse()
+selected_total_claim_procedure_data_dial %>% colnames()
+
+dialysis <- selected_total_claim_procedure_data_dial %>% 
   filter(name == "持続緩徐式血液濾過" | name == "障害者等加算（持続緩徐式血液濾過）" | name == "人工腎臓（その他）" | name == "透析液水質確保加算（人工腎臓）" | 
            name == "人工腎臓（導入期）加算"  | name == "人工腎臓（慢性維持透析）（４時間未満）" | name == "透析液水質確保加算２" | 
            name == "障害者等加算（人工腎臓）" | name == "人工腎臓（慢性維持透析１）（４時間未満）"  | name == "慢性維持透析濾過加算（人工腎臓）" |
            name == "人工腎臓（慢性維持透析１）（４時間以上５時間未満）" | name == "時間外・休日加算（人工腎臓）" | name ==  "導入期加算２（人工腎臓）" |
            name == "人工腎臓（慢性維持透析濾過）（複雑）" | name == "人工腎臓（慢性維持透析）（４時間以上５時間未満）" | name == "透析液水質確保加算１" |
            name == "人工腎臓（慢性維持透析）（５時間以上）" | name == "人工腎臓（慢性維持透析１）（４時間未満）（イを除く）" | name == "人工腎臓（慢性維持透析１）（５時間以上）" | name == "長時間加算（人工腎臓）") %>% 
-  distinct(id, .keep_all=TRUE) %>% 
-  select(-name, -code)
+  filter(adm < day & day < disc)
+
 
 
 
