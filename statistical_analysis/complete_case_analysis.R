@@ -1,11 +1,15 @@
 
 # Set-up packages ---------------------------------------------------------
 
-packages = c("survival",
+packages = c("tidyverse",
+             "lubridate",
+             "survival",
              "mice",
              "norm2",
              "tidyverse",
-             "lubridate")
+             "lubridate",
+             "ggplot2",
+             "survminer")
 package.check <- lapply(packages, FUN = function(x){
   if (!require(x, character.only = TRUE)){
     install.packages(x, dependencies = TRUE)
@@ -20,9 +24,16 @@ df_summary <- read_rds("output/df_summary.rds")
 df_summary %>% glimpse()
 df_summary %>% colnames()
 
-df_comp <- df_summary %>%
-  select(-disc) %>% 
+df_summary <- df_summary %>%
+  select(-adm, -disc, -direct_death, -indirect_death, -diff_time) 
+
+df_comp <- df_summary %>% 
   drop_na()
+df_comp %>% glimpse()
+df_comp <- df_comp %>% 
+  mutate(bun = if_else(19 < bun, 1, 0)) %>% 
+  mutate_all(.funs = ~ as.character(.)) %>% 
+  mutate_all(.funs = ~ as.numeric(.))
 
 # Kaplan-Meier Method -----------------------------------------------------
 
@@ -74,20 +85,11 @@ temp
 # These fixed effects model did not converge
 
 ## count: continuous
-## not converge
+## not converged
 
-df_comp %>% glimpse()
-df_comp_fixed <- df_comp %>% 
-  mutate(death = as.integer(death),
-         adm_jcs = as.integer(adm_jcs),
-         adm_adl = as.integer(adm_adl)
-         #adm_jcs = ifelse(adm_jcs == 0, 0, 1),
-         #adm_adl = ifelse(adm_adl == 0 | adm_adl == 1, 0, 1)
-         )
-
-obj_fixed_comp <- Surv(df_comp_fixed$los, df_comp_fixed$death)
+obj_fixed_comp <- Surv(df_comp$los, df_comp$death)
 fit_fixed_comp <- coxph(obj_fixed_comp ~ anti_pseudo + sex + bmi + adm_adl + steroid + adm_jcs + oxy + crp + alb + bun + count + strata(id),
-                        data = df_comp_fixed)
+                        data = df_comp)
 cox.zph(fit_fixed_comp)
 scatter.smooth(residuals(fit_fixed_comp, type="deviance"))
 abline(h=0,lty=3,col=2)
@@ -98,14 +100,14 @@ exp(result_fixed[["coefficients"]][1,3])
 exp(confint(fit_fixed_comp))
 
 ## count: categorical variable (1 < count < 6)
-## not converge
+## not converged
 
 df_comp_fixed <- df_comp_fixed %>% 
   filter(count < 6)
 
-obj_fixed_comp <- Surv(df_comp_fixed$los, df_comp_fixed$death)
+obj_fixed_comp <- Surv(df_comp$los, df_comp$death)
 fit_fixed_comp <- coxph(obj_fixed_comp ~ anti_pseudo + sex + bmi + adm_adl + steroid + adm_jcs + oxy + crp + alb + bun + count + strata(id),
-                        data = df_comp_fixed)
+                        data = df_comp)
 cox.zph(fit_fixed_comp)
 scatter.smooth(residuals(fit_fixed_comp, type="deviance"))
 abline(h=0,lty=3,col=2)
@@ -116,17 +118,9 @@ confint(fit_fixed_comp)
 # Frailty model -----------------------------------------------------------
 
 ## count: continuous
+## not converged
 
-df_comp %>% glimpse()
-df_comp_random <- df_comp %>% 
-  mutate(death = as.integer(death),
-         #count = as.factor(count),
-         #adm_jcs = as.integer(adm_jcs),
-         #adm_adl = as.integer(adm_adl))
-         #adm_jcs = ifelse(adm_jcs == 0, 0, 1),
-         #adm_adl = ifelse(adm_adl == 0 | adm_adl == 1, 0, 1)
-         )
-obj_frailty_comp <- Surv(df_comp_random$los, df_comp_random$death)
+obj_frailty_comp <- Surv(df_comp$los, df_comp$death)
 fit_frailty_comp <- coxph(obj_frailty_comp ~ anti_pseudo + sex + bmi + adm_adl + steroid + adm_jcs + oxy + crp + alb + bun + count + frailty(id),
                           data = df_comp_random)
 result_frailty <- summary(fit_frailty_comp)
@@ -134,3 +128,12 @@ exp(result_frailty[["coefficients"]][1,1])
 exp(result_frailty[["coefficients"]][1,3])
 exp(confint(fit_frailty_comp))
 
+# Cox proportional hazard model with robust standard error ----------------
+
+df_comp %>% glimpse()
+obj_cox_comp <- Surv(df_comp$los, df_comp$death)
+fit_cox_comp <- coxph(obj_cox_comp ~ anti_pseudo + age + bmi + adm_adl + steroid + adm_jcs + oxy + bun + count + cluster(id),
+                          data = df_comp)
+result_frailty <- summary(fit_cox_comp)
+result_frailty
+exp(confint(fit_frailty_comp))
