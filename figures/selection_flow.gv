@@ -14,8 +14,8 @@ digraph flowchart {
   c [pos="-2,1!",label = '', shape=invis, width=0, height=0]
   d [pos="3,1!",label = '', shape=invis, width=0, height=0]
   
-  D [pos="-2,0!" ,label = "Anti-pseudomonal antibiotics group\n - 542  patients\l - 923 observations\l"];
-  E [pos="3,0!",label = "Non-anti-pseudomonal antibiotics group\n - 1190  patients\l - 2695 observations\l"];
+  D [pos="-2,0!" ,label = "Anti-pseudomonal antibiotics group\n - 519  patients\l - 885 observations\l"];
+  E [pos="3,0!",label = "Non-anti-pseudomonal antibiotics group\n - 1139  patients\l - 2570 observations\l"];
 
   A -> B
   B -> a [dir='none']

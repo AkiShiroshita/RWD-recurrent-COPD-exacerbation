@@ -701,7 +701,7 @@ pep_use_before_df <- pep_use_before_df %>%
 
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, pep_use_before_df, by = c("id","adm")) 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  mutate(pep = if_else(pep == "NA", 0, 1))
+  mutate(pep = if_else(is.na(pep), 0, 1))
 
 # oral abx use within 90 days
 
@@ -745,7 +745,7 @@ oral_abx_use_before_df <- oral_abx_use_before_df %>%
 
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, oral_abx_use_before_df, by = c("id","adm")) 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  mutate(oral_abx90 = if_else(oral_abx90 == "NA", 0, 1))
+  mutate(oral_abx90 = if_else(is.na(oral_abx90), 0, 1))
 
 # iv abx use within 90 days
 
@@ -789,7 +789,7 @@ iv_abx_use_before_df <- iv_abx_use_before_df %>%
 
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, iv_abx_use_before_df, by = c("id","adm")) 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  mutate(iv_abx24 = if_else(iv_abx90 == "NA", 0, 1))
+  mutate(iv_abx90 = if_else(is.na(iv_abx90), 0, 1))
 
 # oral steroid
 
@@ -978,7 +978,7 @@ oral_steroid_use_before_df <- oral_steroid_use_before_df %>%
 
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, oral_steroid_use_before_df, by = c("id","adm")) 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  mutate(oral_steroid90 = if_else(oral_steroid90 == "NA", 0, 1))
+  mutate(oral_steroid90 = if_else(is.na(oral_steroid90), 0, 1))
 
 # iv steroid before 90 days
 
@@ -1023,7 +1023,7 @@ iv_steroid_use_before_df <- iv_steroid_use_before_df %>%
 
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, iv_steroid_use_before_df, by = c("id","adm")) 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  mutate(iv_steroid90 = if_else(iv_steroid90 == "NA", 0, 1))
+  mutate(iv_steroid90 = if_else(is.na(iv_steroid90), 0, 1))
 
 # Claim Procedure Data ------------------------------------------------------
 
