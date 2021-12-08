@@ -2,12 +2,12 @@ digraph flowchart {
   layout=neato;
 
   node [shape = rectangle]
-  A [pos="0,5!" ,label  = "All-cause hospitalization in the dataset\n - 38767  patients\l - 105564 observations\l"];
-  B [pos="0,3!",label  = "Patients selected on the algorithm\n - 1323 patients\l - 3642 observations\l"];
+  A [pos="0,5!" ,label  = "Patients with COPD and lower tract infections\n - 5940 patients\l - 8151 observations\l"];
+  B [pos="0,3!",label  = "Patients with COPD and recurrent lower tract infections\n - 1270 patients\l - 3481 observations\l"];
   
   a [pos="0,2!",label = '', shape=invis, width=0, height=0];
   
-  C [pos="5,2!", label = "Excluded patients\n - 19 in-hospital death within 24 hours\l - 0 transfered to another hospital within 24 hours\l"];
+  C [pos="5,2!", label = "Excluded patients\n - 23 in-hospital death within 24 hours\l - 3 transfered to another hospital within 24 hours\l"];
   
   b [pos="0,1!",label = '', shape=invis, width=0, height=0]
   

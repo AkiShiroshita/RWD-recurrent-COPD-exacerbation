@@ -14,7 +14,8 @@ packages = c("devtools",
              "ggplot2",
              "ggplotgui",
              "ggthemes",
-             "arsenal")
+             "arsenal",
+             "survival")
 package.check <- lapply(packages, FUN = function(x){
   if (!require(x, character.only = TRUE)){
     install.packages(x, dependencies = TRUE)
@@ -55,7 +56,7 @@ length(unique(dpc_ef1_data$患者ID)) #38767
 dpc_ef1_data %>% distinct(患者ID)
 dpc_ef1_data %>% distinct(患者ID, 入院日)
 
-# check the number of the included patients 
+# main diagnosis, admission-precipitating diagnosis, or most resource-consuming diagnosis of lower tract infections 
 
 dpc_ef1_data_duplicate <- dpc_ef1_data %>% 
   filter((str_detect(dpc_ef1_data$項目名,"主傷病に対するICD10コード") & str_detect(dpc_ef1_data$データ,"J440")) |
@@ -89,13 +90,15 @@ dpc_ef1_data_duplicate <- dpc_ef1_data %>%
 dpc_ef1_data_duplicate %>% glimpse()
 length(unique(dpc_ef1_data_duplicate$id)) 
 
-# extract the information of "様式1" among the included patients
+# extract the information of "様式1" among the potentially included patients
 
 dpc_ef1_data_all <- dpc_ef1_data %>% 
   arrange(患者ID, 入院日) %>% 
   rename(id = "患者ID",
          adm = "入院日") %>%
   mutate(adm = ymd(adm))
+
+# add information except for comobidities and subsequent diseases
 
 dpc_ef1_data_selected_without_c <- dpc_ef1_data_selected_with_c <- dpc_ef1_data_selected <- inner_join(dpc_ef1_data_all, dpc_ef1_data_duplicate, by = c("id", "adm"))
 dpc_ef1_data_selected_without_c %>% colnames()
@@ -110,11 +113,12 @@ dpc_ef1_data_selected_without_c <- dpc_ef1_data_selected_without_c %>%
          入院の契機となった傷病名,医療資源を最も投入した傷病名に対するICD10コード,医療資源を最も投入した傷病名,
          退院時のADLスコア,入院時意識障害がある場合のJCS,退院時意識障害がある場合のJCS,`Hugh-Jones分類`,
          肺炎の重症度分類,入院時のADLスコア,喫煙指数,BMI,救急車による搬送の有無,退院年月日,
-         退院先,退院時転帰,`24時間以内の死亡の有無`,入院経路,医療介護関連肺炎に該当の有無, diff_time)
+         退院先,退院時転帰,`24時間以内の死亡の有無`,入院経路,医療介護関連肺炎に該当の有無, diff_time) %>% 
+  filter(!退院年月日 == "0") 
 dpc_ef1_data_selected_without_c$入院時のADLスコア <- sapply(strsplit(dpc_ef1_data_selected_without_c$入院時のADLスコア,""), function(x) sum(as.numeric(x))) 
 dpc_ef1_data_selected_without_c$退院時のADLスコア <- sapply(strsplit(dpc_ef1_data_selected_without_c$退院時のADLスコア,""), function(x) sum(as.numeric(x))) 
 
-# add information of the comorbidity and subsequent
+# add information of the comorbidities and subsequent diseases
 
 dpc_ef1_data_selected_with_c %>% colnames()
 
@@ -166,6 +170,8 @@ dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected_without_c, dpc_ef1_data
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, dpc_ef1_data_selected_with_c2, by = c("id", "adm"))
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, dpc_ef1_data_selected_with_c3, by = c("id", "adm"))
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, dpc_ef1_data_selected_with_c4, by = c("id", "adm"))
+
+# select patient with lower tract infections 
 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
   filter(
@@ -273,17 +279,28 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
            (str_detect(dpc_ef1_data_selected$入院時併存症名に対するICD10コード_7,"J44")) |
            (str_detect(dpc_ef1_data_selected$入院時併存症名に対するICD10コード_8,"J44")) |
            (str_detect(dpc_ef1_data_selected$入院時併存症名に対するICD10コード_9,"J44")) |
-           (str_detect(dpc_ef1_data_selected$入院時併存症名に対するICD10コード_10,"J44")))))) # 8273
-length(unique(dpc_ef1_data_selected$id)) # 5927
+           (str_detect(dpc_ef1_data_selected$入院時併存症名に対するICD10コード_10,"J44")))))) 
+length(unique(dpc_ef1_data_selected$id)) 
+
+# detect recurrent lower tract infections
 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
   group_by(id) %>% 
   filter(n() >= 2) %>% 
   ungroup() #3615
-length(unique(dpc_ef1_data_selected$id)) # 1314
+length(unique(dpc_ef1_data_selected$id)) 
+
+# exclude patients having events within 24 hours
+
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  filter(`24時間以内の死亡の有無` == "0") %>% 
+  filter(!adm == ymd(退院年月日))
 
 key <- dpc_ef1_data_selected %>% 
   distinct(id,adm)
+
+id_key <- key %>% 
+  distinct(id, .keep_all=TRUE)
 
 length(unique(key$id)) 
 
@@ -623,6 +640,157 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
         remove = TRUE,
         na.rm = TRUE) 
 
+# oral anti-peptide
+
+oral <- read_excel("memo/oral.xlsx")
+oral_pep <- read_excel("memo/pep.xlsx")
+oral_pep <- oral_pep %>% 
+  pull(drug)
+filter_pep <- str_c(oral_pep, collapse = "|")
+pep <- oral %>% 
+  filter(str_detect(成分名, filter_pep)) %>% 
+  select(2) %>% 
+  pull()
+filter_pep_code <- str_c(pep, collapse = "|")
+pep_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_pep_code))
+pep_use %>% glimpse()
+pep_use %>% colnames()
+pep_use <- pep_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         day = "開始日", # for joining
+         oral_end1 = "終了日",
+         oral_code1 = "薬価コード",
+         oral_name1 = "薬剤名",
+         oral_dose1 = "用量",
+         oral_department1 = "診療科") %>% 
+  mutate(day = ymd(day))
+
+count_key <- key %>% 
+  group_by(id) %>% 
+  mutate(count = row_number())
+max(count_key$count)
+
+pep_use_before_df <- c()
+
+for(i in 1:17) {
+filter_key <- count_key %>% 
+  filter(count == i)
+id1 <- filter_key$id
+id2 <- pep_use$id
+y1 <- filter_key$adm
+y2 <- pep_use$day
+pep_use_before_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
+#pep_use_after <- neardate(id1, id2, y1, y2) # closest one after first admission
+pep_use_before_filter <- ifelse((filter_key$adm - pep_use$day[pep_use_before_filter]) > 30, NA, pep_use_before_filter)
+pep_use_before <- pep_use[pep_use_before_filter, ] %>% 
+  drop_na(id) %>% 
+  distinct(id, .keep_all=TRUE)
+count <- count_key %>% 
+  filter(count == i)  
+pep_use_before_append <- left_join(count, pep_use_before, by = "id")
+pep_use_before_df <- bind_rows(pep_use_before_df, pep_use_before_append)
+}
+
+pep_use_before_df <- pep_use_before_df %>% 
+  arrange(id, adm) %>% 
+  drop_na(oral_code1) %>% 
+  rename(pep = "oral_code1") %>% 
+  select(id, adm, pep)
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, pep_use_before_df, by = c("id","adm")) 
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  mutate(pep = if_else(pep == "NA", 0, 1))
+
+# oral abx use within 90 days
+
+oral_abx_use %>% glimpse()
+oral_abx_use <- oral_abx_use %>% 
+  rename(id = "患者ID",
+         day = "開始日", 
+         end = "終了日",
+         code = "薬価コード",
+         name = "薬剤名",
+         dose = "用量",
+         department1 = "診療科") %>% 
+  mutate(day = ymd(day))
+
+oral_abx_use_before_df <- c()
+
+for(i in 1:17) {
+  filter_key <- count_key %>% 
+    filter(count == i)
+  id1 <- filter_key$id
+  id2 <- oral_abx_use$id
+  y1 <- filter_key$adm
+  y2 <- oral_abx_use$day
+  oral_abx_use_before_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
+  #pep_use_after <- neardate(id1, id2, y1, y2) # closest one after first admission
+  oral_abx_use_before_filter <- ifelse((filter_key$adm - oral_abx_use$day[oral_abx_use_before_filter]) > 90, NA, oral_abx_use_before_filter)
+  oral_abx_use_before <- oral_abx_use[oral_abx_use_before_filter, ] %>% 
+    drop_na(id) %>% 
+    distinct(id, .keep_all=TRUE)
+  count <- count_key %>% 
+    filter(count == i)  
+  oral_abx_use_before_append <- left_join(count, oral_abx_use_before, by = "id")
+  oral_abx_use_before_df <- bind_rows(oral_abx_use_before_df, oral_abx_use_before_append)
+}
+
+oral_abx_use_before_df <- oral_abx_use_before_df %>% 
+  arrange(id, adm) %>% 
+  drop_na(code) %>% 
+  rename(oral_abx90 = "code") %>% 
+  select(id, adm, oral_abx90)
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, oral_abx_use_before_df, by = c("id","adm")) 
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  mutate(oral_abx90 = if_else(oral_abx90 == "NA", 0, 1))
+
+# iv abx use within 90 days
+
+iv_abx_use %>% glimpse()
+iv_abx_use <- iv_abx_use %>% 
+  rename(id = "患者ID",
+         day = "開始日", 
+         end = "終了日",
+         code = "薬価コード",
+         name = "薬剤名",
+         dose = "用量",
+         department1 = "診療科") %>% 
+  mutate(day = ymd(day))
+
+iv_abx_use_before_df <- c()
+
+for(i in 1:17) {
+  filter_key <- count_key %>% 
+    filter(count == i)
+  id1 <- filter_key$id
+  id2 <- iv_abx_use$id
+  y1 <- filter_key$adm
+  y2 <- iv_abx_use$day
+  iv_abx_use_before_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
+  #pep_use_after <- neardate(id1, id2, y1, y2) # closest one after first admission
+  iv_abx_use_before_filter <- ifelse((filter_key$adm - iv_abx_use$day[iv_abx_use_before_filter]) > 90, NA, iv_abx_use_before_filter)
+  iv_abx_use_before <- iv_abx_use[iv_abx_use_before_filter, ] %>% 
+    drop_na(id) %>% 
+    distinct(id, .keep_all=TRUE)
+  count <- count_key %>% 
+    filter(count == i)  
+  iv_abx_use_before_append <- left_join(count, iv_abx_use_before, by = "id")
+  iv_abx_use_before_df <- bind_rows(iv_abx_use_before_df, iv_abx_use_before_append)
+}
+
+iv_abx_use_before_df <- iv_abx_use_before_df %>% 
+  arrange(id, adm) %>% 
+  drop_na(code) %>% 
+  rename(iv_abx90 = "code") %>% 
+  select(id, adm, iv_abx90)
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, iv_abx_use_before_df, by = c("id","adm")) 
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  mutate(iv_abx24 = if_else(iv_abx90 == "NA", 0, 1))
+
 # oral steroid
 
 steroid <- read_excel("memo/steroid.xlsx")
@@ -766,6 +934,96 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) 
+
+# oral steroid use before 90 days
+
+oral_steroid_use <- steroid_oral_use
+oral_steroid_use %>% glimpse()
+oral_steroid_use <- oral_steroid_use %>% 
+  rename(id = "患者ID",
+         day = "開始日", 
+         end = "終了日",
+         code = "薬価コード",
+         name = "薬剤名",
+         dose = "用量",
+         department1 = "診療科") %>% 
+  mutate(day = ymd(day))
+
+oral_steroid_use_before_df <- c()
+
+for(i in 1:17) {
+  filter_key <- count_key %>% 
+    filter(count == i)
+  id1 <- filter_key$id
+  id2 <- oral_steroid_use$id
+  y1 <- filter_key$adm
+  y2 <- oral_steroid_use$day
+  oral_steroid_use_before_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
+  #pep_use_after <- neardate(id1, id2, y1, y2) # closest one after first admission
+  oral_steroid_use_before_filter <- ifelse((filter_key$adm - oral_steroid_use$day[oral_steroid_use_before_filter]) > 90, NA, oral_steroid_use_before_filter)
+  oral_steroid_use_before <- oral_steroid_use[oral_steroid_use_before_filter, ] %>% 
+    drop_na(id) %>% 
+    distinct(id, .keep_all=TRUE)
+  count <- count_key %>% 
+    filter(count == i)  
+  oral_steroid_use_before_append <- left_join(count, oral_steroid_use_before, by = "id")
+  oral_steroid_use_before_df <- bind_rows(oral_steroid_use_before_df, oral_steroid_use_before_append)
+}
+
+oral_steroid_use_before_df <- oral_steroid_use_before_df %>% 
+  arrange(id, adm) %>% 
+  drop_na(code) %>% 
+  rename(oral_steroid90 = "code") %>% 
+  select(id, adm, oral_steroid90)
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, oral_steroid_use_before_df, by = c("id","adm")) 
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  mutate(oral_steroid90 = if_else(oral_steroid90 == "NA", 0, 1))
+
+# iv steroid before 90 days
+
+iv_steroid_use <- steroid_iv_use
+iv_steroid_use %>% glimpse()
+iv_steroid_use <- iv_steroid_use %>% 
+  rename(id = "患者ID",
+         day = "開始日", 
+         end = "終了日",
+         code = "薬価コード",
+         name = "薬剤名",
+         dose = "用量",
+         department1 = "診療科") %>% 
+  mutate(day = ymd(day))
+
+iv_steroid_use_before_df <- c()
+
+for(i in 1:17) {
+  filter_key <- count_key %>% 
+    filter(count == i)
+  id1 <- filter_key$id
+  id2 <- iv_steroid_use$id
+  y1 <- filter_key$adm
+  y2 <- iv_steroid_use$day
+  iv_steroid_use_before_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
+  #pep_use_after <- neardate(id1, id2, y1, y2) # closest one after first admission
+  iv_steroid_use_before_filter <- ifelse((filter_key$adm - iv_steroid_use$day[iv_steroid_use_before_filter]) > 90, NA, iv_steroid_use_before_filter)
+  iv_steroid_use_before <- iv_steroid_use[iv_steroid_use_before_filter, ] %>% 
+    drop_na(id) %>% 
+    distinct(id, .keep_all=TRUE)
+  count <- count_key %>% 
+    filter(count == i)  
+  iv_steroid_use_before_append <- left_join(count, iv_steroid_use_before, by = "id")
+  iv_steroid_use_before_df <- bind_rows(iv_steroid_use_before_df, iv_steroid_use_before_append)
+}
+
+iv_steroid_use_before_df <- iv_steroid_use_before_df %>% 
+  arrange(id, adm) %>% 
+  drop_na(code) %>% 
+  rename(iv_steroid90 = "code") %>% 
+  select(id, adm, iv_steroid90)
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, iv_steroid_use_before_df, by = c("id","adm")) 
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  mutate(iv_steroid90 = if_else(iv_steroid90 == "NA", 0, 1))
 
 # Claim Procedure Data ------------------------------------------------------
 
