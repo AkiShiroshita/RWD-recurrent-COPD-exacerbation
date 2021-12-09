@@ -47,3 +47,5 @@ predmt
 df_mi100 <- mice(df_mi, m = 100, predictorMatrix = predmt, maxit = 20, printFlag = FALSE, seed = 1234)
 
 df_mi100 %>% write_rds("output/df_mi100.rds", compress = "gz")
+
+plot(df_mi100)

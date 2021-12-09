@@ -93,30 +93,30 @@ df_com <- df_summary %>%
                            (str_detect(df$com_code7, "D6")) | (str_detect(df$com_code8, "D6")) |
                            (str_detect(df$com_code9, "D6")) | (str_detect(df$com_code10, "D6")), 1, 0),
          endoc = ifelse((str_detect(df$com_code1, "E")) | (str_detect(df$com_code2, "J47")) |
-                           (str_detect(df$com_code3, "E")) | (str_detect(df$com_code4, "E")) |
-                           (str_detect(df$com_code5, "E")) | (str_detect(df$com_code6, "E")) |
-                           (str_detect(df$com_code7, "E")) | (str_detect(df$com_code8, "E")) |
-                           (str_detect(df$com_code9, "E")) | (str_detect(df$com_code10, "E")), 1, 0),
+                          (str_detect(df$com_code3, "E")) | (str_detect(df$com_code4, "E")) |
+                          (str_detect(df$com_code5, "E")) | (str_detect(df$com_code6, "E")) |
+                          (str_detect(df$com_code7, "E")) | (str_detect(df$com_code8, "E")) |
+                          (str_detect(df$com_code9, "E")) | (str_detect(df$com_code10, "E")), 1, 0),
          psycho = ifelse((str_detect(df$com_code1, "F")) | (str_detect(df$com_code2, "J47")) |
-                          (str_detect(df$com_code3, "F")) | (str_detect(df$com_code4, "F")) |
-                          (str_detect(df$com_code5, "F")) | (str_detect(df$com_code6, "F")) |
-                          (str_detect(df$com_code7, "F")) | (str_detect(df$com_code8, "F")) |
-                          (str_detect(df$com_code9, "F")) | (str_detect(df$com_code10, "F")), 1, 0),
+                           (str_detect(df$com_code3, "F")) | (str_detect(df$com_code4, "F")) |
+                           (str_detect(df$com_code5, "F")) | (str_detect(df$com_code6, "F")) |
+                           (str_detect(df$com_code7, "F")) | (str_detect(df$com_code8, "F")) |
+                           (str_detect(df$com_code9, "F")) | (str_detect(df$com_code10, "F")), 1, 0),
          neuro = ifelse((str_detect(df$com_code1, "G")) | (str_detect(df$com_code2, "G")) |
-                           (str_detect(df$com_code3, "G")) | (str_detect(df$com_code4, "G")) |
-                           (str_detect(df$com_code5, "G")) | (str_detect(df$com_code6, "G")) |
-                           (str_detect(df$com_code7, "G")) | (str_detect(df$com_code8, "G")) |
-                           (str_detect(df$com_code9, "G")) | (str_detect(df$com_code10, "G")), 1, 0),
+                          (str_detect(df$com_code3, "G")) | (str_detect(df$com_code4, "G")) |
+                          (str_detect(df$com_code5, "G")) | (str_detect(df$com_code6, "G")) |
+                          (str_detect(df$com_code7, "G")) | (str_detect(df$com_code8, "G")) |
+                          (str_detect(df$com_code9, "G")) | (str_detect(df$com_code10, "G")), 1, 0),
          heart = ifelse((str_detect(df$com_code1, "I")) | (str_detect(df$com_code2, "I")) |
                           (str_detect(df$com_code3, "I")) | (str_detect(df$com_code4, "I")) |
                           (str_detect(df$com_code5, "I")) | (str_detect(df$com_code6, "I")) |
                           (str_detect(df$com_code7, "I")) | (str_detect(df$com_code8, "I")) |
                           (str_detect(df$com_code9, "I")) | (str_detect(df$com_code10, "I")), 1, 0), 
          digest = ifelse((str_detect(df$com_code1, "K")) | (str_detect(df$com_code2, "K")) |
-                          (str_detect(df$com_code3, "K")) | (str_detect(df$com_code4, "K")) |
-                          (str_detect(df$com_code5, "K")) | (str_detect(df$com_code6, "K")) |
-                          (str_detect(df$com_code7, "K")) | (str_detect(df$com_code8, "K")) |
-                          (str_detect(df$com_code9, "K")) | (str_detect(df$com_code10, "K")), 1, 0)) %>% 
+                           (str_detect(df$com_code3, "K")) | (str_detect(df$com_code4, "K")) |
+                           (str_detect(df$com_code5, "K")) | (str_detect(df$com_code6, "K")) |
+                           (str_detect(df$com_code7, "K")) | (str_detect(df$com_code8, "K")) |
+                           (str_detect(df$com_code9, "K")) | (str_detect(df$com_code10, "K")), 1, 0)) %>% 
   select(id, adm, bronch, asthma, malig, anemia, endoc, psycho, neuro, heart, digest, anti_pseudo)
 
 vars <- c("bronch", "asthma", "malig", "anemia", "endoc", "psycho", "neuro", "heart", "digest")
@@ -190,6 +190,7 @@ df_summary <- df %>%
          steroid = if_else(steroid_oral==1 | steroid_iv==1, 1, 0),
          steroid = as.factor(steroid),
          hugh_johns = as.numeric(hugh_johns),
+         hugh_johns = na_if(hugh_johns, 0),
          oxy = as.factor(oxy),
          wbc = as.numeric(wbc),
          alb = as.numeric(alb),
@@ -200,6 +201,7 @@ df_summary <- df %>%
   group_by(id) %>% 
   mutate(count = row_number()) %>% 
   ungroup()
+
 df_summary %>% glimpse()
 df_summary %>% colnames()
 
@@ -209,10 +211,10 @@ df_summary %>% filter(anti_pseudo == 0) %>% distinct(id, adm)
 df_summary %>% filter(anti_pseudo == 1) %>% distinct(id)
 df_summary %>% filter(anti_pseudo == 1) %>% distinct(id, adm)
 
-vars <- c("count", "age", "sex", "bmi", "adm_adl", "hugh-johns", "disc_adl", "adm_jcs",
+vars <- c("count", "age", "sex", "bmi", "adm_adl", "hugh_johns", "disc_adl", "adm_jcs",
           "disc_jcs", "oxy", "wbc", "alb", "bun", "crp", "anti_pseudo", "steroid", "los", "death", "direct_death", "indirect_death")
-factorVars <- c("death", "sex", "adm_adl", "hugh-johns", "disc_adl", "adm_jcs",
-          "disc_jcs", "anti_pseudo", "steroid", "oxy", "count", "direct_death", "indirect_death")
+factorVars <- c("death", "sex", "adm_adl", "hugh_johns", "disc_adl", "adm_jcs",
+                "disc_jcs", "anti_pseudo", "steroid", "oxy", "count", "direct_death", "indirect_death")
 table1 <- CreateTableOne(vars = vars,
                          data = df_summary,
                          includeNA = FALSE,
@@ -233,6 +235,10 @@ table2 %>%
 # for analysis
 
 df <- read_rds("output/cleaned_data.rds")
+
+miss <- miss_var_summary(df)
+miss       
+
 df_summary <- df %>% 
   select(-starts_with("com"), -starts_with("sub"), -starts_with("main"), -starts_with("prep"),
          -starts_with("reso"), -severity, -amb, -nhcap) %>% 
@@ -247,7 +253,7 @@ df_summary <- df %>%
          #                    adm_jcs == 1 | adm_jcs == 2 | adm_jcs == 3 ~ 1,
          #                    adm_jcs == 10 | adm_jcs == 20 | adm_jcs == 30 ~ 2,
          #                    adm_jcs == 100 | adm_jcs == 200 | adm_jcs == 300 ~ 3),
-         adm_jcs = if_else(0 < adm_jcs, 1, 0),
+         adm_jcs = if_else(0 < adm_jcs, 1, 0), # confirmed no missing 
          disc_jcs = case_when(disc_jcs == 0 ~ 0,
                               disc_jcs == 1 | disc_jcs == 2 | disc_jcs == 3 ~ 1,
                               disc_jcs == 10 | disc_jcs == 20 | disc_jcs == 30 ~ 2,
@@ -289,6 +295,10 @@ df_summary <- df %>%
          steroid = if_else(steroid_oral==1 | steroid_iv==1, 1, 0),
          steroid = as.factor(steroid),
          hugh_johns = as.numeric(hugh_johns),
+         hugh_johns = na_if(hugh_johns, 0),
+         hugh_johns = if_else(3 < hugh_johns, 1, 0),
+         hugh_johns = as.factor(hugh_johns),
+         steroid = as.factor(steroid),
          oxy = as.factor(oxy),
          wbc = as.numeric(wbc),
          alb = as.numeric(alb),
@@ -301,6 +311,8 @@ df_summary <- df %>%
   ungroup()
 df_summary %>% glimpse()
 df_summary %>% colnames()
+
+df_summary %>% write_rds("output/df_summary.rds", compress = "gz")
 
 df_summary <- df_summary %>% 
   mutate(anti_pseudo = factor(anti_pseudo,
@@ -327,7 +339,7 @@ graph1 <- ggplot(df_summary, aes(x = diff_time, fill = anti_pseudo)) +
   theme_classic() +
   theme(legend.position = "none") +
   scale_fill_brewer(palette="Set1")
-  
+
 graph1
 
 #graph2 <- ggplot(df_summary, aes(x = count, fill = anti_pseudo)) +
