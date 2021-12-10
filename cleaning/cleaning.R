@@ -304,6 +304,43 @@ id_key <- key %>%
 
 length(unique(key$id)) 
 
+# previous hospitalization within 12 months
+count_key <- key %>% 
+  group_by(id) %>% 
+  mutate(count = row_number())
+max(count_key$count)
+
+pep_use_before_df <- c()
+
+for(i in 1:17) {
+  filter_key <- count_key %>% 
+    filter(count == i)
+  id1 <- filter_key$id
+  id2 <- pep_use$id
+  y1 <- filter_key$adm
+  y2 <- pep_use$day
+  pep_use_before_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
+  #pep_use_after <- neardate(id1, id2, y1, y2) # closest one after first admission
+  pep_use_before_filter <- ifelse((filter_key$adm - pep_use$day[pep_use_before_filter]) > 30, NA, pep_use_before_filter)
+  pep_use_before <- pep_use[pep_use_before_filter, ] %>% 
+    drop_na(id) %>% 
+    distinct(id, .keep_all=TRUE)
+  count <- count_key %>% 
+    filter(count == i)  
+  pep_use_before_append <- left_join(count, pep_use_before, by = "id")
+  pep_use_before_df <- bind_rows(pep_use_before_df, pep_use_before_append)
+}
+
+pep_use_before_df <- pep_use_before_df %>% 
+  arrange(id, adm) %>% 
+  drop_na(oral_code1) %>% 
+  rename(pep = "oral_code1") %>% 
+  select(id, adm, pep)
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, pep_use_before_df, by = c("id","adm")) 
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  mutate(pep = if_else(is.na(pep), 0, 1))
+
 # Patient data ------------------------------------------------------------
 
 #patient_data %>% glimpse()

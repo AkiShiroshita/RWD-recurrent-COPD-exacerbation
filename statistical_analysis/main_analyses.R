@@ -39,7 +39,7 @@ df_mi100_stack <- df_mi100_stack %>%
   mutate_all(.funs = ~ as.numeric(.)) %>% 
   ungroup()
 
-# Frailty model -----------------------------------------------------------
+# Frailty model (death) -----------------------------------------------------------
 
 res_fm <- df_mi100_stack %>% 
   group_by(.imp) %>% 
@@ -54,7 +54,7 @@ combined_res_fm <- MIcombine(res_fm$fit, call=NULL)
 combined_res_fm_sum <- summary(combined_res_fm)
 exp(combined_res_fm_sum[, 1:4])
 
-# Gamma model -------------------------------------------------------------
+# Frailty model (discharge)  -------------------------------------------------------------
 
 res_gm <- df_mi100_stack %>% 
   group_by(.imp) %>% 
