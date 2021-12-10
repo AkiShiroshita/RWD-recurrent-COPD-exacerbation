@@ -305,41 +305,50 @@ id_key <- key %>%
 length(unique(key$id)) 
 
 # previous hospitalization within 12 months
-count_key <- key %>% 
-  group_by(id) %>% 
-  mutate(count = row_number())
-max(count_key$count)
 
-pep_use_before_df <- c()
+count_key <- key %>% 
+  select(id, adm)
+
+previous <- dpc_ef1_data_all %>% 
+  distinct(id, adm) %>% 
+  select(id, adm)
+previous <- setdiff(previous, count_key, by = c("id","adm"))
+count_key <- count_key %>% 
+  group_by(id) %>% 
+  mutate(count = row_number()) %>% 
+  ungroup()
+
+pep_hos_df <- c()
 
 for(i in 1:17) {
   filter_key <- count_key %>% 
     filter(count == i)
   id1 <- filter_key$id
-  id2 <- pep_use$id
+  id2 <- previous$id
   y1 <- filter_key$adm
-  y2 <- pep_use$day
-  pep_use_before_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
+  y2 <- previous$adm
+  pep_hos_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
   #pep_use_after <- neardate(id1, id2, y1, y2) # closest one after first admission
-  pep_use_before_filter <- ifelse((filter_key$adm - pep_use$day[pep_use_before_filter]) > 30, NA, pep_use_before_filter)
-  pep_use_before <- pep_use[pep_use_before_filter, ] %>% 
+  pep_hos_filter <- ifelse((filter_key$adm - previous$adm[pep_hos_filter]) > 365, NA, pep_hos_filter)
+  pep_hos <- previous[pep_hos_filter, ] %>% 
     drop_na(id) %>% 
-    distinct(id, .keep_all=TRUE)
+    distinct(id, adm, .keep_all=TRUE)
   count <- count_key %>% 
     filter(count == i)  
-  pep_use_before_append <- left_join(count, pep_use_before, by = "id")
-  pep_use_before_df <- bind_rows(pep_use_before_df, pep_use_before_append)
+  pep_hos_append <- left_join(count, pep_hos, by = "id")
+  pep_hos_df <- bind_rows(pep_hos_df, pep_hos_append)
 }
 
-pep_use_before_df <- pep_use_before_df %>% 
-  arrange(id, adm) %>% 
-  drop_na(oral_code1) %>% 
-  rename(pep = "oral_code1") %>% 
-  select(id, adm, pep)
+pep_hos_df <- pep_hos_df %>% 
+  arrange(id, adm.x) %>% 
+  drop_na(adm.y) %>% 
+  rename(pre_hos = "adm.y",
+         adm = adm.x) %>% 
+  select(id, adm, pre_hos)
 
-dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, pep_use_before_df, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, pep_hos_df, by = c("id","adm")) 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
-  mutate(pep = if_else(is.na(pep), 0, 1))
+  mutate(pre_hos = if_else(is.na(pre_hos), 0, 1))
 
 # Patient data ------------------------------------------------------------
 
@@ -1061,6 +1070,133 @@ iv_steroid_use_before_df <- iv_steroid_use_before_df %>%
 dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, iv_steroid_use_before_df, by = c("id","adm")) 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
   mutate(iv_steroid90 = if_else(is.na(iv_steroid90), 0, 1))
+
+
+# oral immunosuppression within 90 days
+
+oral <- read_excel("memo/oral.xlsx")
+oral_immuno <- read_excel("memo/immuno.xlsx")
+oral_immuno <- oral_immuno %>% 
+  pull(drug)
+filter_immuno <- str_c(oral_immuno, collapse = "|")
+immuno <- oral %>% 
+  filter(str_detect(成分名, filter_immuno)) %>% 
+  select(2) %>% 
+  pull()
+filter_immuno_code <- str_c(immuno, collapse = "|")
+immuno_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_immuno_code))
+immuno_use %>% glimpse()
+immuno_use %>% colnames()
+immuno_use <- immuno_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         day = "開始日", # for joining
+         oral_end1 = "終了日",
+         oral_code1 = "薬価コード",
+         oral_name1 = "薬剤名",
+         oral_dose1 = "用量",
+         oral_department1 = "診療科") %>% 
+  mutate(day = ymd(day))
+
+count_key <- key %>% 
+  group_by(id) %>% 
+  mutate(count = row_number())
+max(count_key$count)
+
+immuno_use_before_df <- c()
+
+for(i in 1:17) {
+  filter_key <- count_key %>% 
+    filter(count == i)
+  id1 <- filter_key$id
+  id2 <- immuno_use$id
+  y1 <- filter_key$adm
+  y2 <- immuno_use$day
+  immuno_use_before_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
+  #immuno_use_after <- neardate(id1, id2, y1, y2) # closest one after first admission
+  immuno_use_before_filter <- ifelse((filter_key$adm - immuno_use$day[immuno_use_before_filter]) > 30, NA, immuno_use_before_filter)
+  immuno_use_before <- immuno_use[immuno_use_before_filter, ] %>% 
+    drop_na(id) %>% 
+    distinct(id, .keep_all=TRUE)
+  count <- count_key %>% 
+    filter(count == i)  
+  immuno_use_before_append <- left_join(count, immuno_use_before, by = "id")
+  immuno_use_before_df <- bind_rows(immuno_use_before_df, immuno_use_before_append)
+}
+
+immuno_use_before_df <- immuno_use_before_df %>% 
+  arrange(id, adm) %>% 
+  drop_na(oral_code1) %>% 
+  rename(oral_immuno = "oral_code1") %>% 
+  select(id, adm, oral_immuno)
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, immuno_use_before_df, by = c("id","adm")) 
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  mutate(oral_immuno = if_else(is.na(oral_immuno), 0, 1))
+
+# iv immunosuppression within 90 days
+
+iv <- read_excel("memo/iv.xlsx")
+iv_immuno <- read_excel("memo/immuno.xlsx")
+iv_immuno <- iv_immuno %>% 
+  pull(drug)
+filter_immuno <- str_c(iv_immuno, collapse = "|")
+immuno <- iv %>% 
+  filter(str_detect(成分名, filter_immuno)) %>% 
+  select(2) %>% 
+  pull()
+filter_immuno_code <- str_c(immuno, collapse = "|")
+immuno_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_immuno_code))
+immuno_use %>% glimpse()
+immuno_use %>% colnames()
+immuno_use <- immuno_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         day = "開始日", # for joining
+         iv_end1 = "終了日",
+         iv_code1 = "薬価コード",
+         iv_name1 = "薬剤名",
+         iv_dose1 = "用量",
+         iv_department1 = "診療科") %>% 
+  mutate(day = ymd(day))
+
+count_key <- key %>% 
+  group_by(id) %>% 
+  mutate(count = row_number())
+max(count_key$count)
+
+immuno_use_before_df <- c()
+
+for(i in 1:17) {
+  filter_key <- count_key %>% 
+    filter(count == i)
+  id1 <- filter_key$id
+  id2 <- immuno_use$id
+  y1 <- filter_key$adm
+  y2 <- immuno_use$day
+  immuno_use_before_filter <- neardate(id1, id2, y1, y2, best = "prior") # closest one before admission
+  #immuno_use_after <- neardate(id1, id2, y1, y2) # closest one after first admission
+  immuno_use_before_filter <- ifelse((filter_key$adm - immuno_use$day[immuno_use_before_filter]) > 30, NA, immuno_use_before_filter)
+  immuno_use_before <- immuno_use[immuno_use_before_filter, ] %>% 
+    drop_na(id) %>% 
+    distinct(id, .keep_all=TRUE)
+  count <- count_key %>% 
+    filter(count == i)  
+  immuno_use_before_append <- left_join(count, immuno_use_before, by = "id")
+  immuno_use_before_df <- bind_rows(immuno_use_before_df, immuno_use_before_append)
+}
+
+immuno_use_before_df <- immuno_use_before_df %>% 
+  arrange(id, adm) %>% 
+  drop_na(iv_code1) %>% 
+  rename(iv_immuno = "iv_code1") %>% 
+  select(id, adm, iv_immuno)
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, immuno_use_before_df, by = c("id","adm")) 
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  mutate(iv_immuno = if_else(is.na(iv_immuno), 0, 1))
 
 # Claim Procedure Data ------------------------------------------------------
 

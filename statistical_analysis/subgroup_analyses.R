@@ -260,6 +260,4 @@ combined_res_fm_pneumo <- MIcombine(res_fm_pneumo$fit, call=NULL)
 combined_res_fm_pneumo_sum <- summary(combined_res_fm_pneumo)
 exp(combined_res_fm_pneumo_sum[, 1:4])
 
-# drug resistant risks ----------------------------------------------------
-
 
