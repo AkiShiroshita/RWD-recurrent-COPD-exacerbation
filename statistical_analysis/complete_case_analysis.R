@@ -25,7 +25,8 @@ df_summary %>% glimpse()
 df_summary %>% colnames()
 
 df_summary <- df_summary %>%
-  select(-adm, -disc, -direct_death, -indirect_death, -diff_time) 
+  select(id, los, death, anti_pseudo, age, bmi, adm_adl, hugh_johns,
+  adm_jcs, oxy, bun, steroid, count) 
 
 df_comp <- df_summary %>% 
   drop_na()
@@ -118,11 +119,11 @@ confint(fit_fixed_comp)
 # Frailty model -----------------------------------------------------------
 
 ## count: continuous
-## not converged
 
 obj_frailty_comp <- Surv(df_comp$los, df_comp$death)
-fit_frailty_comp <- coxph(obj_frailty_comp ~ anti_pseudo + sex + bmi + adm_adl + steroid + adm_jcs + oxy + crp + alb + bun + count + frailty(id),
-                          data = df_comp_random)
+fit_frailty_comp <- coxph(obj_frailty_comp ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
+                            adm_jcs + oxy + bun + steroid + count + frailty(id),
+                          data = df_comp)
 result_frailty <- summary(fit_frailty_comp)
 exp(result_frailty[["coefficients"]][1,1])
 exp(result_frailty[["coefficients"]][1,3])
