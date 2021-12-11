@@ -222,6 +222,9 @@ df_pneumo <- df_pneumo %>%
   ungroup()
 
 df_pneumo %>% glimpse()
+        severity <- as.data.frame(strsplit(df_pneumo$severity, "")) 
+col.names = c("severity1", "severity2", "severity3", "severity4", "severity5", "severity6", "severity7"))
+
 df_pneumo$severity <- sapply(strsplit(df_pneumo$severity,""), function(x) sum(as.numeric(x))) 
 df_pneumo <- df_pneumo %>%
   drop_na(los) %>% 

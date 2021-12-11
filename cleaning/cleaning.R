@@ -1198,6 +1198,16 @@ dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, immuno_use_before_df, 
 dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
   mutate(iv_immuno = if_else(is.na(iv_immuno), 0, 1))
 
+# Inhaler -----------------------------------------------------------------
+
+applicant <- read_excel("memo/applicant.xls")
+ics <- read_excel("memo/ics.xlsx")
+laba <- read_excel("memo/laba.xlsx")
+lama <- read_excel("memo/lama.xlsx")
+ics_laba <- read_excel("memo/ics_laba.xlsx")
+laba_lama <- read_excel("memo/laba_lama.xlsx")
+ics_laba_lama <- read_excel("memo/ics_laba_lama.xlsx")
+
 # Claim Procedure Data ------------------------------------------------------
 
 claim_procedure_data %>% glimpse()

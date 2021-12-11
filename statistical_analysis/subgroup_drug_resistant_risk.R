@@ -224,3 +224,111 @@ combined_res_fm_dr <- MIcombine(res_fm_dr$fit, call=NULL)
 
 combined_res_fm_dr_sum <- summary(combined_res_fm_dr)
 exp(combined_res_fm_dr_sum[, 1:4])
+
+# Interaction terms -------------------------------------------------------
+
+df_mi_int <- df_dr %>% 
+  select(id, los, death, anti_pseudo, age, sex, bmi, adm_adl, hugh_johns, adm_jcs, oxy, bun, steroid, count,
+         nh, dialysis, pre_hos, abx90, steroid90, immuno90, pep)
+df_mi_int0 <- mice(df_mi_int, maxit = 0)
+df_mi_int0$method
+df_mi_int0$predictorMatrix
+predmt <- (1 - diag(1, ncol(df_mi_int)))
+predmt[1, ] <- predmt[, 1] <- 0
+predmt
+df_mi100_int <- mice(df_mi_int, m = 100, predictorMatrix = predmt, maxit = 20, printFlag = FALSE, seed = 1234)
+
+df_mi100_stack_int <- complete(df_mi100_int, action="long") %>% 
+  as_tibble()
+
+df_mi100_stack_int <- df_mi100_stack_int %>% 
+  group_by(.imp) %>% 
+  mutate(bun = if_else(19 < bun, 1, 0),
+         discharge = if_else(death == 0, 0, 1)) %>% 
+  mutate_all(.funs = ~ as.character(.)) %>% 
+  mutate_all(.funs = ~ as.numeric(.)) %>% 
+  ungroup()
+
+res_fm_int <- df_mi100_stack_int %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo:nh + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm_int
+combined_res_fm_int <- MIcombine(res_fm_int$fit, call=NULL)
+
+combined_res_fm_int_sum <- summary(combined_res_fm_int)
+exp(combined_res_fm_int_sum[, 1:4])
+
+res_fm_int <- df_mi100_stack_int %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo:dialysis + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm_int
+combined_res_fm_int <- MIcombine(res_fm_int$fit, call=NULL)
+
+combined_res_fm_int_sum <- summary(combined_res_fm_int)
+exp(combined_res_fm_int_sum[, 1:4])
+
+res_fm_int <- df_mi100_stack_int %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo:pre_hos + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm_int
+combined_res_fm_int <- MIcombine(res_fm_int$fit, call=NULL)
+
+combined_res_fm_int_sum <- summary(combined_res_fm_int)
+exp(combined_res_fm_int_sum[, 1:4])
+
+res_fm_int <- df_mi100_stack_int %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo:abx90 + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm_int
+combined_res_fm_int <- MIcombine(res_fm_int$fit, call=NULL)
+
+combined_res_fm_int_sum <- summary(combined_res_fm_int)
+exp(combined_res_fm_int_sum[, 1:4])
+
+res_fm_int <- df_mi100_stack_int %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo:steroid90 + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm_int
+combined_res_fm_int <- MIcombine(res_fm_int$fit, call=NULL)
+
+combined_res_fm_int_sum <- summary(combined_res_fm_int)
+exp(combined_res_fm_int_sum[, 1:4])
+
+res_fm_int <- df_mi100_stack_int %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo:immuno90 + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm_int
+combined_res_fm_int <- MIcombine(res_fm_int$fit, call=NULL)
+
+combined_res_fm_int_sum <- summary(combined_res_fm_int)
+exp(combined_res_fm_int_sum[, 1:4])
+
+res_fm_int <- df_mi100_stack_int %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo:pep + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm_int
+combined_res_fm_int <- MIcombine(res_fm_int$fit, call=NULL)
+
+combined_res_fm_int_sum <- summary(combined_res_fm_int)
+exp(combined_res_fm_int_sum[, 1:4])

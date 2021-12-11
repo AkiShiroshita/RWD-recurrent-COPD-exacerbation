@@ -55,3 +55,51 @@ combined_res_fe_sum <- summary(combined_res_fe)
 exp(combined_res_fe_sum[, 1:4])
 
 # no convergence
+
+# Time to next hospitalization --------------------------------------------
+
+df <- read_rds("output/df_summary.rds")
+df %>% glimpse()
+df %>% colnames()
+
+df <- df %>%
+  drop_na(diff_time) %>% 
+  select(-adm, -disc, -direct_death, -indirect_death) 
+
+
+## mice
+df %>% glimpse()
+df_mi <- df 
+df_mi0 <- mice(df_mi, maxit = 0)
+df_mi0$method
+df_mi0$predictorMatrix
+predmt <- (1 - diag(1, ncol(df_mi)))
+predmt[1, ] <- predmt[, 1] <- 0
+predmt
+df_mi100 <- mice(df_mi, m = 100, predictorMatrix = predmt, maxit = 20, printFlag = FALSE, seed = 1234)
+
+df_mi100_stack <- complete(df_mi100, action="long") %>% 
+  as_tibble()
+
+df_mi100_stack <- df_mi100_stack %>% 
+  group_by(.imp) %>% 
+  mutate(bun = if_else(19 < bun, 1, 0),
+         discharge = if_else(death == 0, 0, 1),
+         revisit = 1) %>% 
+  mutate_all(.funs = ~ as.character(.)) %>% 
+  mutate_all(.funs = ~ as.numeric(.)) %>% 
+  ungroup()
+
+res_fm <- df_mi100_stack %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(diff_time, revisit) ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
+                                  adm_jcs + oxy + bun + steroid + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm
+combined_res_fm <- MIcombine(res_fm$fit, call=NULL)
+
+combined_res_fm_sum <- summary(combined_res_fm)
+exp(combined_res_fm_sum[, 1:4])
+
