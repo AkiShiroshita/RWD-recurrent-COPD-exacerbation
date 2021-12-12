@@ -20,7 +20,7 @@ inner_join(df, beds_id, by = "id")
 2623/3455
 
 
-# Drugs -------------------------------------------------------------------
+# Vasopressor -------------------------------------------------------------------
 
 iv <- read_excel("memo/iv.xlsx")
 vaso <- read_excel("memo/vaso.xlsx")
@@ -92,6 +92,99 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
         sep = "_",
         remove = TRUE,
         na.rm = TRUE) 
+
+# ics -----------------------------------------------------------------
+
+app <- read_excel("memo/applicant.xls")
+ics <- read_excel("memo/ics.xlsx")
+
+app %>% glimpse()
+app %>% colnames()
+ics %>% colnames()
+ics <- ics %>% 
+  pull(drug)
+filter_ics <- str_c(ics, collapse = "|")
+ics <- app %>% 
+  filter(str_detect(`...8`, filter_ics)) %>% 
+  select(2) %>% 
+  pull()
+filter_ics_code <- str_c(ics, collapse = "|")
+ics_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_ics_code))
+ics_use %>% glimpse()
+ics_use %>% colnames()
+ics_use1 <- ics_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         ics_end1 = "終了日",
+         ics_code1 = "薬価コード",
+         ics_name1 = "薬剤名",
+         ics_dose1 = "用量",
+         ics_department1 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         ics_end1 = ymd(ics_end1)) %>% 
+  distinct(id, adm, ics_code1, .keep_all=TRUE)
+ics_use1 <- inner_join(key, ics_use1, by = c("id","adm")) 
+ics_use1_wide <- ics_use1 %>% 
+  select(id,adm,ics_code1) %>% 
+  pivot_wider(names_from = ics_code1,
+              values_from = ics_code1,
+              names_prefix = "drug") %>% 
+  unite(ics1, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+ics_use2 <- ics_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         ics_end2 = "終了日",
+         ics_code2 = "薬価コード",
+         ics_name2 = "薬剤名",
+         ics_dose2 = "用量",
+         ics_department2 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         adm = adm - 1,
+         ics_end2 = ymd(ics_end2)) %>% 
+  distinct(id, adm, ics_code2, .keep_all=TRUE)
+ics_use2 <- inner_join(key, ics_use2, by = c("id","adm")) 
+ics_use2_wide <- ics_use2 %>% 
+  select(id,adm,ics_code2) %>% 
+  pivot_wider(names_from = ics_code2,
+              values_from = ics_code2,
+              names_prefix = "drug") %>% 
+  unite(ics2, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, ics_use1_wide, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, ics_use2_wide, by = c("id","adm")) 
+
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  unite(ics, starts_with("ics"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+# LABA --------------------------------------------------------------------
+
+
+# LAMA --------------------------------------------------------------------
+
+
+
+# ICS/LABA ----------------------------------------------------------------
+
+
+# LABA/LAMA ---------------------------------------------------------------
+
+
+# ICS/LABA/LAMA -----------------------------------------------------------
+
+
 
 # Atypical change ---------------------------------------------------------
 
