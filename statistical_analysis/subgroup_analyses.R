@@ -3,6 +3,8 @@
 packages = c(
   "tidyverse",
   "lubridate",
+  "exploratory",
+  "multirich",
   "ggplot2",
   "knitr",
   "kableExtra",
@@ -21,6 +23,10 @@ package.check <- lapply(packages, FUN = function(x){
     library(x, character.only = TRUE)
   }
 })
+
+#install.packages("devtools")
+#devtools::install_github("exploratory-io/exploratory_func")
+library(exploratory)
 
 df <- read_rds("output/cleaned_data.rds")
 
@@ -222,13 +228,40 @@ df_pneumo <- df_pneumo %>%
   ungroup()
 
 df_pneumo %>% glimpse()
-        severity <- as.data.frame(strsplit(df_pneumo$severity, "")) 
-col.names = c("severity1", "severity2", "severity3", "severity4", "severity5", "severity6", "severity7"))
 
-df_pneumo$severity <- sapply(strsplit(df_pneumo$severity,""), function(x) sum(as.numeric(x))) 
+list_to_text <- function(column, sep = ", ") {
+  loadNamespace("stringr")
+  ret <- sapply(column, function(x) {
+    ret <- stringr::str_c(stringr::str_replace_na(x), collapse = sep)
+    if(identical(ret, character(0))){
+      # if it's character(0). Not too sure if this would still happen now that we do str_replace_na first.
+      NA
+    } else {
+      ret
+    }
+  })
+  as.character(ret)
+}
+
+df_pneumo <- df_pneumo %>% 
+  mutate(severity = as.character(severity),
+         severity = str_split(severity, pattern = ""),
+         severity = list_to_text(severity, sep = ":")) %>% 
+         separate(severity, into = c("severity1", "severity2", "severity3", "severity4", "severity5",
+                              "severity6", "severity7"), sep = ":") %>% 
+  mutate(severity4 = as.numeric(severity4),
+         severity5 = as.numeric(severity5),
+         severity6 = as.numeric(severity6),
+         severity7 = as.numeric(severity7),
+         severity7 = if_else(severity7 == 3, 1, 0),
+         severity = severity4 + severity5 + severity6 + severity7)
+
+#df_pneumo$severity <- sapply(strsplit(df_pneumo$severity,""), function(x) sum(as.numeric(x))) 
+
 df_pneumo <- df_pneumo %>%
   drop_na(los) %>% 
-  select(-adm, -disc, -direct_death, -indirect_death, -diff_time) 
+  select(-adm, -disc, -direct_death, -indirect_death, -diff_time,
+         -severity1, -severity2, -severity3,-severity4, -severity5, -severity6, -severity7,) 
 
 df_mi_pneumo <- df_pneumo 
 df_mi_pneumo0 <- mice(df_mi_pneumo, maxit = 0)
