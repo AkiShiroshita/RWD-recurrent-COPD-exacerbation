@@ -69,23 +69,6 @@ combined_res_gm <- MIcombine(res_gm$fit, call=NULL)
 combined_res_gm_sum <- summary(combined_res_gm)
 exp(combined_res_gm_sum[, 1:4])
 
-# Logistic regression -----------------------------------------------------
-
-res_lg <- df_mi100_stack %>% 
-  group_by(.imp) %>% 
-  nest() %>% 
-  mutate(fit = map(data, ~geeglm(death ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
-                                  adm_jcs + oxy + bun + steroid + count,
-                                 id = id,
-                                 corstr = "exchangeable",
-                                 family = binomial(),
-                                 data = .))) 
-res_lg
-combined_res_lg <- MIcombine(res_lg$fit, call=NULL)
-
-combined_res_lg_sum <- summary(combined_res_lg)
-exp(combined_res_lg_sum[, 1:4])
-
 # Time to next hospitalization --------------------------------------------
 
 df <- read_rds("output/df_summary.rds")
