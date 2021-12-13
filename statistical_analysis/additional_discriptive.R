@@ -171,20 +171,383 @@ dpc_ef1_data_selected <- dpc_ef1_data_selected %>%
 
 # LABA --------------------------------------------------------------------
 
+app <- read_excel("memo/applicant.xls")
+laba <- read_excel("memo/laba.xlsx")
+
+app %>% glimpse()
+app %>% colnames()
+laba %>% colnames()
+laba <- laba %>% 
+  pull(drug)
+filter_laba <- str_c(laba, collapse = "|")
+laba <- app %>% 
+  filter(str_detect(`...8`, filter_laba)) %>% 
+  select(2) %>% 
+  pull()
+filter_laba_code <- str_c(laba, collapse = "|")
+laba_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_laba_code))
+laba_use %>% glimpse()
+laba_use %>% colnames()
+laba_use1 <- laba_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         laba_end1 = "終了日",
+         laba_code1 = "薬価コード",
+         laba_name1 = "薬剤名",
+         laba_dose1 = "用量",
+         laba_department1 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         laba_end1 = ymd(laba_end1)) %>% 
+  distinct(id, adm, laba_code1, .keep_all=TRUE)
+laba_use1 <- inner_join(key, laba_use1, by = c("id","adm")) 
+laba_use1_wide <- laba_use1 %>% 
+  select(id,adm,laba_code1) %>% 
+  pivot_wider(names_from = laba_code1,
+              values_from = laba_code1,
+              names_prefix = "drug") %>% 
+  unite(laba1, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+laba_use2 <- laba_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         laba_end2 = "終了日",
+         laba_code2 = "薬価コード",
+         laba_name2 = "薬剤名",
+         laba_dose2 = "用量",
+         laba_department2 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         adm = adm - 1,
+         laba_end2 = ymd(laba_end2)) %>% 
+  distinct(id, adm, laba_code2, .keep_all=TRUE)
+laba_use2 <- inner_join(key, laba_use2, by = c("id","adm")) 
+laba_use2_wide <- laba_use2 %>% 
+  select(id,adm,laba_code2) %>% 
+  pivot_wider(names_from = laba_code2,
+              values_from = laba_code2,
+              names_prefix = "drug") %>% 
+  unite(laba2, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, laba_use1_wide, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, laba_use2_wide, by = c("id","adm")) 
+
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  unite(laba, starts_with("laba"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
 
 # LAMA --------------------------------------------------------------------
 
+app <- read_excel("memo/applicant.xls")
+lama <- read_excel("memo/lama.xlsx")
 
+app %>% glimpse()
+app %>% colnames()
+lama %>% colnames()
+lama <- lama %>% 
+  pull(drug)
+filter_lama <- str_c(lama, collapse = "|")
+lama <- app %>% 
+  filter(str_detect(`...8`, filter_lama)) %>% 
+  select(2) %>% 
+  pull()
+filter_lama_code <- str_c(lama, collapse = "|")
+lama_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_lama_code))
+lama_use %>% glimpse()
+lama_use %>% colnames()
+lama_use1 <- lama_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         lama_end1 = "終了日",
+         lama_code1 = "薬価コード",
+         lama_name1 = "薬剤名",
+         lama_dose1 = "用量",
+         lama_department1 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         lama_end1 = ymd(lama_end1)) %>% 
+  distinct(id, adm, lama_code1, .keep_all=TRUE)
+lama_use1 <- inner_join(key, lama_use1, by = c("id","adm")) 
+lama_use1_wide <- lama_use1 %>% 
+  select(id,adm,lama_code1) %>% 
+  pivot_wider(names_from = lama_code1,
+              values_from = lama_code1,
+              names_prefix = "drug") %>% 
+  unite(lama1, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+lama_use2 <- lama_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         lama_end2 = "終了日",
+         lama_code2 = "薬価コード",
+         lama_name2 = "薬剤名",
+         lama_dose2 = "用量",
+         lama_department2 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         adm = adm - 1,
+         lama_end2 = ymd(lama_end2)) %>% 
+  distinct(id, adm, lama_code2, .keep_all=TRUE)
+lama_use2 <- inner_join(key, lama_use2, by = c("id","adm")) 
+lama_use2_wide <- lama_use2 %>% 
+  select(id,adm,lama_code2) %>% 
+  pivot_wider(names_from = lama_code2,
+              values_from = lama_code2,
+              names_prefix = "drug") %>% 
+  unite(lama2, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, lama_use1_wide, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, lama_use2_wide, by = c("id","adm")) 
+
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  unite(lama, starts_with("lama"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
 
 # ICS/LABA ----------------------------------------------------------------
 
+app <- read_excel("memo/applicant.xls")
+ics_laba <- read_excel("memo/ics_laba.xlsx")
+
+app %>% glimpse()
+app %>% colnames()
+ics_laba %>% colnames()
+ics_laba <- ics_laba %>% 
+  pull(drug)
+filter_ics_laba <- str_c(ics_laba, collapse = "|")
+ics_laba <- app %>% 
+  filter(str_detect(`...8`, filter_ics_laba)) %>% 
+  select(2) %>% 
+  pull()
+filter_ics_laba_code <- str_c(ics_laba, collapse = "|")
+ics_laba_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_ics_laba_code))
+ics_laba_use %>% glimpse()
+ics_laba_use %>% colnames()
+ics_laba_use1 <- ics_laba_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         ics_laba_end1 = "終了日",
+         ics_laba_code1 = "薬価コード",
+         ics_laba_name1 = "薬剤名",
+         ics_laba_dose1 = "用量",
+         ics_laba_department1 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         ics_laba_end1 = ymd(ics_laba_end1)) %>% 
+  distinct(id, adm, ics_laba_code1, .keep_all=TRUE)
+ics_laba_use1 <- inner_join(key, ics_laba_use1, by = c("id","adm")) 
+ics_laba_use1_wide <- ics_laba_use1 %>% 
+  select(id,adm,ics_laba_code1) %>% 
+  pivot_wider(names_from = ics_laba_code1,
+              values_from = ics_laba_code1,
+              names_prefix = "drug") %>% 
+  unite(ics_laba1, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+ics_laba_use2 <- ics_laba_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         ics_laba_end2 = "終了日",
+         ics_laba_code2 = "薬価コード",
+         ics_laba_name2 = "薬剤名",
+         ics_laba_dose2 = "用量",
+         ics_laba_department2 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         adm = adm - 1,
+         ics_laba_end2 = ymd(ics_laba_end2)) %>% 
+  distinct(id, adm, ics_laba_code2, .keep_all=TRUE)
+ics_laba_use2 <- inner_join(key, ics_laba_use2, by = c("id","adm")) 
+ics_laba_use2_wide <- ics_laba_use2 %>% 
+  select(id,adm,ics_laba_code2) %>% 
+  pivot_wider(names_from = ics_laba_code2,
+              values_from = ics_laba_code2,
+              names_prefix = "drug") %>% 
+  unite(ics_laba2, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, ics_laba_use1_wide, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, ics_laba_use2_wide, by = c("id","adm")) 
+
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  unite(ics_laba, starts_with("ics_laba"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
 
 # LABA/LAMA ---------------------------------------------------------------
 
+app <- read_excel("memo/applicant.xls")
+laba_lama <- read_excel("memo/laba_lama.xlsx")
+
+app %>% glimpse()
+app %>% colnames()
+laba_lama %>% colnames()
+laba_lama <- laba_lama %>% 
+  pull(drug)
+filter_laba_lama <- str_c(laba_lama, collapse = "|")
+laba_lama <- app %>% 
+  filter(str_detect(`...8`, filter_laba_lama)) %>% 
+  select(2) %>% 
+  pull()
+filter_laba_lama_code <- str_c(laba_lama, collapse = "|")
+laba_lama_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_laba_lama_code))
+laba_lama_use %>% glimpse()
+laba_lama_use %>% colnames()
+laba_lama_use1 <- laba_lama_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         laba_lama_end1 = "終了日",
+         laba_lama_code1 = "薬価コード",
+         laba_lama_name1 = "薬剤名",
+         laba_lama_dose1 = "用量",
+         laba_lama_department1 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         laba_lama_end1 = ymd(laba_lama_end1)) %>% 
+  distinct(id, adm, laba_lama_code1, .keep_all=TRUE)
+laba_lama_use1 <- inner_join(key, laba_lama_use1, by = c("id","adm")) 
+laba_lama_use1_wide <- laba_lama_use1 %>% 
+  select(id,adm,laba_lama_code1) %>% 
+  pivot_wider(names_from = laba_lama_code1,
+              values_from = laba_lama_code1,
+              names_prefix = "drug") %>% 
+  unite(laba_lama1, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+laba_lama_use2 <- laba_lama_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         laba_lama_end2 = "終了日",
+         laba_lama_code2 = "薬価コード",
+         laba_lama_name2 = "薬剤名",
+         laba_lama_dose2 = "用量",
+         laba_lama_department2 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         adm = adm - 1,
+         laba_lama_end2 = ymd(laba_lama_end2)) %>% 
+  distinct(id, adm, laba_lama_code2, .keep_all=TRUE)
+laba_lama_use2 <- inner_join(key, laba_lama_use2, by = c("id","adm")) 
+laba_lama_use2_wide <- laba_lama_use2 %>% 
+  select(id,adm,laba_lama_code2) %>% 
+  pivot_wider(names_from = laba_lama_code2,
+              values_from = laba_lama_code2,
+              names_prefix = "drug") %>% 
+  unite(laba_lama2, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, laba_lama_use1_wide, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, laba_lama_use2_wide, by = c("id","adm")) 
+
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  unite(laba_lama, starts_with("laba_lama"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
 
 # ICS/LABA/LAMA -----------------------------------------------------------
 
+app <- read_excel("memo/applicant.xls")
+ics_laba_lama <- read_excel("memo/ics_laba_lama.xlsx")
 
+app %>% glimpse()
+app %>% colnames()
+ics_laba_lama %>% colnames()
+ics_laba_lama <- ics_laba_lama %>% 
+  pull(drug)
+filter_ics_laba_lama <- str_c(ics_laba_lama, collapse = "|")
+ics_laba_lama <- app %>% 
+  filter(str_detect(`...8`, filter_ics_laba_lama)) %>% 
+  select(2) %>% 
+  pull()
+filter_ics_laba_lama_code <- str_c(ics_laba_lama, collapse = "|")
+ics_laba_lama_use <- emr_drug_data %>% 
+  filter(str_detect(薬価コード, filter_ics_laba_lama_code))
+ics_laba_lama_use %>% glimpse()
+ics_laba_lama_use %>% colnames()
+ics_laba_lama_use1 <- ics_laba_lama_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         ics_laba_lama_end1 = "終了日",
+         ics_laba_lama_code1 = "薬価コード",
+         ics_laba_lama_name1 = "薬剤名",
+         ics_laba_lama_dose1 = "用量",
+         ics_laba_lama_department1 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         ics_laba_lama_end1 = ymd(ics_laba_lama_end1)) %>% 
+  distinct(id, adm, ics_laba_lama_code1, .keep_all=TRUE)
+ics_laba_lama_use1 <- inner_join(key, ics_laba_lama_use1, by = c("id","adm")) 
+ics_laba_lama_use1_wide <- ics_laba_lama_use1 %>% 
+  select(id,adm,ics_laba_lama_code1) %>% 
+  pivot_wider(names_from = ics_laba_lama_code1,
+              values_from = ics_laba_lama_code1,
+              names_prefix = "drug") %>% 
+  unite(ics_laba_lama1, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+ics_laba_lama_use2 <- ics_laba_lama_use %>% 
+  select(1,3,4,5,7,8,9) %>% 
+  rename(id = "患者ID",
+         adm = "開始日", # for joining
+         ics_laba_lama_end2 = "終了日",
+         ics_laba_lama_code2 = "薬価コード",
+         ics_laba_lama_name2 = "薬剤名",
+         ics_laba_lama_dose2 = "用量",
+         ics_laba_lama_department2 = "診療科") %>% 
+  mutate(adm = ymd(adm),
+         adm = adm - 1,
+         ics_laba_lama_end2 = ymd(ics_laba_lama_end2)) %>% 
+  distinct(id, adm, ics_laba_lama_code2, .keep_all=TRUE)
+ics_laba_lama_use2 <- inner_join(key, ics_laba_lama_use2, by = c("id","adm")) 
+ics_laba_lama_use2_wide <- ics_laba_lama_use2 %>% 
+  select(id,adm,ics_laba_lama_code2) %>% 
+  pivot_wider(names_from = ics_laba_lama_code2,
+              values_from = ics_laba_lama_code2,
+              names_prefix = "drug") %>% 
+  unite(ics_laba_lama2, starts_with("drug"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
+
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, ics_laba_lama_use1_wide, by = c("id","adm")) 
+dpc_ef1_data_selected <- left_join(dpc_ef1_data_selected, ics_laba_lama_use2_wide, by = c("id","adm")) 
+
+dpc_ef1_data_selected <- dpc_ef1_data_selected %>% 
+  unite(ics_laba_lama, starts_with("ics_laba_lama"),
+        sep = "_",
+        remove = TRUE,
+        na.rm = TRUE) 
 
 # Atypical change ---------------------------------------------------------
 
@@ -298,3 +661,15 @@ selected_abx_use_change <- abx_use_change %>%
 
 selected_abx_use_change_final <- inner_join(id_key, selected_abx_use_change, by = "id")
 
+# CCI ---------------------------------------------------------------------
+
+dpc_ef1_data = fread("input/2021102512_71_DPC_FF1_data_2021_002_SCE.csv.gz")
+cci <- dpc_ef1_data %>%
+  filter(項目名 == "入院時併存症名に対するICD10コード") %>% 
+  mutate(id = as.numeric(患者ID)*100000000 + as.numeric(入院日)) %>% 
+  rename(name = "項目名",
+         code = "データ") %>% 
+  select(id, code) %>% 
+  arrange(id)
+charlson <- comorbidity(x = cci, id = "id", code = "code", map = "charlson_icd10_quan", assign0 = FALSE)
+unw_cci <- score(charlson, weights = NULL, assign0 = FALSE)

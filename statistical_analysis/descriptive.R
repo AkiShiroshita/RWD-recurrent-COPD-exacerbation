@@ -12,7 +12,8 @@ packages = c("tidyverse",
              "ggplot2",
              "ggplotgui",
              "cowplot",
-             "survival")
+             "survival",
+             "comorbidity")
 package.check <- lapply(packages, FUN = function(x){
   if (!require(x, character.only = TRUE)){
     install.packages(x, dependencies = TRUE)
