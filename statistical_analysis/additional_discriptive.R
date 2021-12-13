@@ -20,7 +20,7 @@ inner_join(df, beds_id, by = "id")
 2623/3455
 
 
-# Vasopressor -------------------------------------------------------------------
+# Vasopressor
 
 iv <- read_excel("memo/iv.xlsx")
 vaso <- read_excel("memo/vaso.xlsx")
@@ -689,5 +689,7 @@ df <- read_rds("output/cleaned_data.rds")
 key <- df %>% distinct(id, adm) %>% mutate(id = as.character(id))
 
 cci_df <- left_join(key, cci_df, by = c("id", "adm"))
-mean(cci_df$score, na.rm = TRUE)
-sd(cci_df$score, na.rm = TRUE)
+
+# Person-day --------------------------------------------------------------
+
+

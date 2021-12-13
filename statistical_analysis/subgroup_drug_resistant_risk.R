@@ -191,46 +191,46 @@ df_dr <- df_dr %>%
 
 # person-year
 
-df_py <- df_pneumo %>% 
+df_py <- df_dr %>% 
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py$total_los)/1042
+sum(df_py$total_los)/1196
 
-df_py1 <- df_pneumo %>%
+df_py1 <- df_dr %>%
   filter(anti_pseudo == 0) %>% 
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py1$total_los)/861
+sum(df_py1$total_los)/1029
 
-df_py2 <- df_pneumo %>% 
+df_py2 <- df_dr %>% 
   filter(anti_pseudo == 1) %>%
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py2$total_los)/451
+sum(df_py2$total_los)/507
 
-obj_py1 <- Surv(as.numeric(df_pneumo$los), as.numeric(df_pneumo$death))
+obj_py1 <- Surv(as.numeric(df_dr$los), as.numeric(df_dr$death))
 fit_py11 <- survfit(obj_py1 ~ 1,
-                    data = df_pneumo)
+                    data = df_dr)
 summary(fit_py11)
 print(fit_py11)
 pyears(obj_py1 ~ 1, scale = 1)
 
-df_pneumo1 <- df_pneumo %>% 
+df_dr1 <- df_dr %>% 
   filter(anti_pseudo == 0)
-obj_py12 <- Surv(as.numeric(df_pneumo1$los), as.numeric(df_pneumo1$death))
+obj_py12 <- Surv(as.numeric(df_dr1$los), as.numeric(df_dr1$death))
 fit_py12 <- survfit(obj_py12 ~ 1,
-                    data = df_pneumo1)
+                    data = df_dr1)
 summary(fit_py12)
 print(fit_py12)
 
-df_pneumo2 <- df_pneumo %>% 
+df_dr2 <- df_dr %>% 
   filter(anti_pseudo == 1)
-obj_py13 <- Surv(as.numeric(df_pneumo2$los), as.numeric(df_pneumo2$death))
+obj_py13 <- Surv(as.numeric(df_dr2$los), as.numeric(df_dr2$death))
 fit_py13 <- survfit(obj_py13 ~ 1,
-                    data = df_pneumo2)
+                    data = df_dr2)
 summary(fit_py13)
 print(fit_py13)
 

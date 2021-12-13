@@ -28,6 +28,8 @@ df_summary <- df_summary %>%
   select(id, los, death, anti_pseudo, age, bmi, adm_adl, hugh_johns,
   adm_jcs, oxy, bun, steroid, count) 
 
+# person- year
+
 df_py <- df_summary %>% 
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
@@ -64,7 +66,7 @@ summary(fit_py12)
 print(fit_py12)
 
 df_summary2 <- df_summary %>% 
-  filter(anti_pseudo == 0)
+  filter(anti_pseudo == 1)
 obj_py13 <- Surv(as.numeric(df_summary2$los), as.numeric(df_summary2$death))
 fit_py13 <- survfit(obj_py13 ~ 1,
                     data = df_summary2)
@@ -83,6 +85,51 @@ df_comp <- df_comp %>%
 
 df_comp %>% glimpse()
 
+# person-year
+df_py <- df_comp %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py$total_los)/1114
+
+df_py1 <- df_comp %>%
+  filter(anti_pseudo == 0) %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py1$total_los)/957
+
+df_py2 <- df_comp %>% 
+  filter(anti_pseudo == 1) %>%
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py2$total_los)/430
+
+obj_py1 <- Surv(as.numeric(df_comp$los), as.numeric(df_comp$death))
+fit_py11 <- survfit(obj_py1 ~ 1,
+                    data = df_comp)
+summary(fit_py11)
+print(fit_py11)
+pyears(obj_py1 ~ 1, scale = 1)
+
+df_comp1 <- df_comp %>% 
+  filter(anti_pseudo == 0)
+obj_py12 <- Surv(as.numeric(df_comp1$los), as.numeric(df_comp1$death))
+fit_py12 <- survfit(obj_py12 ~ 1,
+                    data = df_comp1)
+summary(fit_py12)
+print(fit_py12)
+
+df_comp2 <- df_comp %>% 
+  filter(anti_pseudo == 1)
+obj_py13 <- Surv(as.numeric(df_comp2$los), as.numeric(df_comp2$death))
+fit_py13 <- survfit(obj_py13 ~ 1,
+                    data = df_comp2)
+summary(fit_py13)
+print(fit_py13)
+
+# figure
 obj_py2 <- Surv(as.numeric(df_comp$los), as.numeric(df_comp$death))
 fit_py21 <- survfit(obj_py2 ~ 1,
                   data = df_comp)
