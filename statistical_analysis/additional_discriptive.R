@@ -666,10 +666,28 @@ selected_abx_use_change_final <- inner_join(id_key, selected_abx_use_change, by 
 dpc_ef1_data = fread("input/2021102512_71_DPC_FF1_data_2021_002_SCE.csv.gz")
 cci <- dpc_ef1_data %>%
   filter(項目名 == "入院時併存症名に対するICD10コード") %>% 
-  mutate(id = as.numeric(患者ID)*100000000 + as.numeric(入院日)) %>% 
+  mutate(id = str_c(患者ID, 入院日, sep = "-")) %>% 
   rename(name = "項目名",
          code = "データ") %>% 
   select(id, code) %>% 
   arrange(id)
 charlson <- comorbidity(x = cci, id = "id", code = "code", map = "charlson_icd10_quan", assign0 = FALSE)
-unw_cci <- score(charlson, weights = NULL, assign0 = FALSE)
+charlson
+score <- score(charlson, weights = "quan", assign0 = FALSE)
+cci_id <- cci %>% 
+  distinct(id, .keep_all=TRUE) %>% 
+  arrange(id)
+cci_df <- cbind(cci_id, score) %>% 
+  select(-code) %>% 
+  separate(col = id,
+           into = c("id", "adm"),
+           sep = "-") %>% 
+  mutate(id = as.character(id),
+         adm = ymd(adm))
+
+df <- read_rds("output/cleaned_data.rds")
+key <- df %>% distinct(id, adm) %>% mutate(id = as.character(id))
+
+cci_df <- left_join(key, cci_df, by = c("id", "adm"))
+mean(cci_df$score, na.rm = TRUE)
+sd(cci_df$score, na.rm = TRUE)

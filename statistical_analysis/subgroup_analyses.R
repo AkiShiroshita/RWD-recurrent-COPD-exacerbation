@@ -113,6 +113,50 @@ df_copd <- df_copd %>%
   drop_na(los) %>% 
   select(-adm, -disc, -direct_death, -indirect_death, -diff_time) 
 
+# person-year
+df_py <- df_copd %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py$total_los)/608
+
+df_py1 <- df_copd %>%
+  filter(anti_pseudo == 0) %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py1$total_los)/555
+
+df_py2 <- df_copd %>% 
+  filter(anti_pseudo == 1) %>%
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py2$total_los)/116
+
+obj_py1 <- Surv(as.numeric(df_copd$los), as.numeric(df_copd$death))
+fit_py11 <- survfit(obj_py1 ~ 1,
+                    data = df_copd)
+summary(fit_py11)
+print(fit_py11)
+pyears(obj_py1 ~ 1, scale = 1)
+
+df_copd1 <- df_copd %>% 
+  filter(anti_pseudo == 0)
+obj_py12 <- Surv(as.numeric(df_copd1$los), as.numeric(df_copd1$death))
+fit_py12 <- survfit(obj_py12 ~ 1,
+                    data = df_copd1)
+summary(fit_py12)
+print(fit_py12)
+
+df_copd2 <- df_copd %>% 
+  filter(anti_pseudo == 1)
+obj_py13 <- Surv(as.numeric(df_copd2$los), as.numeric(df_copd2$death))
+fit_py13 <- survfit(obj_py13 ~ 1,
+                    data = df_copd2)
+summary(fit_py13)
+print(fit_py13)
+
 df_mi_copd <- df_copd 
 df_mi_copd0 <- mice(df_mi_copd, maxit = 0)
 df_mi_copd0$method
@@ -247,21 +291,62 @@ df_pneumo <- df_pneumo %>%
   mutate(severity = as.character(severity),
          severity = str_split(severity, pattern = ""),
          severity = list_to_text(severity, sep = ":")) %>% 
-         separate(severity, into = c("severity1", "severity2", "severity3", "severity4", "severity5",
+         separate(severity, into = c("severity1", "severity2", "severity3", "bp", "immunodef",
                               "severity6", "severity7"), sep = ":") %>% 
-  mutate(severity4 = as.numeric(severity4),
-         severity5 = as.numeric(severity5),
-         severity6 = as.numeric(severity6),
-         severity7 = as.numeric(severity7),
-         severity7 = if_else(severity7 == 3, 1, 0),
-         severity = severity4 + severity5 + severity6 + severity7)
+  mutate(bp = as.numeric(bp),
+         immunodef = as.numeric(immunodef))
 
 #df_pneumo$severity <- sapply(strsplit(df_pneumo$severity,""), function(x) sum(as.numeric(x))) 
 
 df_pneumo <- df_pneumo %>%
   drop_na(los) %>% 
   select(-adm, -disc, -direct_death, -indirect_death, -diff_time,
-         -severity1, -severity2, -severity3,-severity4, -severity5, -severity6, -severity7,) 
+         -severity1, -severity2, -severity3, -severity6, -severity7) 
+
+# person-year
+df_py <- df_pneumo %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py$total_los)/1042
+
+df_py1 <- df_pneumo %>%
+  filter(anti_pseudo == 0) %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py1$total_los)/861
+
+df_py2 <- df_pneumo %>% 
+  filter(anti_pseudo == 1) %>%
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py2$total_los)/451
+
+obj_py1 <- Surv(as.numeric(df_pneumo$los), as.numeric(df_pneumo$death))
+fit_py11 <- survfit(obj_py1 ~ 1,
+                    data = df_pneumo)
+summary(fit_py11)
+print(fit_py11)
+pyears(obj_py1 ~ 1, scale = 1)
+
+df_pneumo1 <- df_pneumo %>% 
+  filter(anti_pseudo == 0)
+obj_py12 <- Surv(as.numeric(df_pneumo1$los), as.numeric(df_pneumo1$death))
+fit_py12 <- survfit(obj_py12 ~ 1,
+                    data = df_pneumo1)
+summary(fit_py12)
+print(fit_py12)
+
+df_pneumo2 <- df_pneumo %>% 
+  filter(anti_pseudo == 1)
+obj_py13 <- Surv(as.numeric(df_pneumo2$los), as.numeric(df_pneumo2$death))
+fit_py13 <- survfit(obj_py13 ~ 1,
+                    data = df_pneumo2)
+summary(fit_py13)
+print(fit_py13)
+
 
 df_mi_pneumo <- df_pneumo 
 df_mi_pneumo0 <- mice(df_mi_pneumo, maxit = 0)
@@ -286,8 +371,8 @@ df_mi100_stack_pneumo <- df_mi100_stack_pneumo %>%
 res_fm_pneumo <- df_mi100_stack_pneumo %>% 
   group_by(.imp) %>% 
   nest() %>% 
-  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
-                                  adm_jcs + oxy + bun + steroid + count + severity + 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + age + bmi + adm_adl + hugh_johns + 
+                                  adm_jcs + oxy + bun + steroid + count + bp + immunodef + 
                                   frailty(id, dist = "gauss"),
                                 data = .))) 
 res_fm_pneumo

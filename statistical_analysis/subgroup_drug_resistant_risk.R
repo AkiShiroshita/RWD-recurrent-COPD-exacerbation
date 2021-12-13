@@ -189,6 +189,51 @@ df_dr <- df_dr %>%
   filter(nh == 1 | dialysis == 1 | pre_hos == 1 | abx90 == 1 | steroid90 == 1 |
            immuno90 == 1 | pep ==1)
 
+# person-year
+
+df_py <- df_pneumo %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py$total_los)/1042
+
+df_py1 <- df_pneumo %>%
+  filter(anti_pseudo == 0) %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py1$total_los)/861
+
+df_py2 <- df_pneumo %>% 
+  filter(anti_pseudo == 1) %>%
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py2$total_los)/451
+
+obj_py1 <- Surv(as.numeric(df_pneumo$los), as.numeric(df_pneumo$death))
+fit_py11 <- survfit(obj_py1 ~ 1,
+                    data = df_pneumo)
+summary(fit_py11)
+print(fit_py11)
+pyears(obj_py1 ~ 1, scale = 1)
+
+df_pneumo1 <- df_pneumo %>% 
+  filter(anti_pseudo == 0)
+obj_py12 <- Surv(as.numeric(df_pneumo1$los), as.numeric(df_pneumo1$death))
+fit_py12 <- survfit(obj_py12 ~ 1,
+                    data = df_pneumo1)
+summary(fit_py12)
+print(fit_py12)
+
+df_pneumo2 <- df_pneumo %>% 
+  filter(anti_pseudo == 1)
+obj_py13 <- Surv(as.numeric(df_pneumo2$los), as.numeric(df_pneumo2$death))
+fit_py13 <- survfit(obj_py13 ~ 1,
+                    data = df_pneumo2)
+summary(fit_py13)
+print(fit_py13)
+
 # analysis ----------------------------------------------------------------
 
 df_mi_dr <- df_dr %>% 

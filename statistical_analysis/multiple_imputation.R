@@ -29,8 +29,6 @@ df %>% colnames()
 
 df <- df %>%
   drop_na(los) %>% 
-  mutate(age2 = age*age,
-         bmi2 = bmi*bmi) %>% 
   select(-adm, -disc, -direct_death, -indirect_death, -diff_time) 
 
 df %>% write_csv("output/analysis_data.csv")

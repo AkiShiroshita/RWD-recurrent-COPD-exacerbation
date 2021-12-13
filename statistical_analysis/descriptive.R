@@ -12,8 +12,7 @@ packages = c("tidyverse",
              "ggplot2",
              "ggplotgui",
              "cowplot",
-             "survival",
-             "comorbidity")
+             "survival")
 package.check <- lapply(packages, FUN = function(x){
   if (!require(x, character.only = TRUE)){
     install.packages(x, dependencies = TRUE)
@@ -49,12 +48,13 @@ df %>% filter(str_detect(df$main_code,"J2") | str_detect(df$reso_code,"J2") | st
 
 # comorbidities  
 
-df_com <- df_summary %>% 
+df_com <- df %>% 
   mutate(bronch = ifelse((str_detect(df$com_code1, "J47")) | (str_detect(df$com_code2, "J47")) |
                            (str_detect(df$com_code3, "J47")) | (str_detect(df$com_code4, "J47")) |
                            (str_detect(df$com_code5, "J47")) | (str_detect(df$com_code6, "J47")) |
                            (str_detect(df$com_code7, "J47")) | (str_detect(df$com_code8, "J47")) |
                            (str_detect(df$com_code9, "J47")) | (str_detect(df$com_code10, "J47")), 1, 0),
+         
          asthma = ifelse((str_detect(df$com_code1, "J45")) | (str_detect(df$com_code2, "J45")) |
                            (str_detect(df$com_code3, "J45")) | (str_detect(df$com_code4, "J45")) |
                            (str_detect(df$com_code5, "J45")) | (str_detect(df$com_code6, "J45")) |
@@ -65,23 +65,13 @@ df_com <- df_summary %>%
                            (str_detect(df$com_code5, "J46")) | (str_detect(df$com_code6, "J46")) |
                            (str_detect(df$com_code7, "J46")) | (str_detect(df$com_code8, "J46")) |
                            (str_detect(df$com_code9, "J46")) | (str_detect(df$com_code10, "J46")), 1, 0),
+         
          malig = ifelse((str_detect(df$com_code1, "C")) | (str_detect(df$com_code2, "C")) |
                           (str_detect(df$com_code3, "C")) | (str_detect(df$com_code4, "C")) |
                           (str_detect(df$com_code5, "C")) | (str_detect(df$com_code6, "C")) |
                           (str_detect(df$com_code7, "C")) | (str_detect(df$com_code8, "C")) |
-                          (str_detect(df$com_code9, "C")) | (str_detect(df$com_code10, "C"))|
-                          
-                          (str_detect(df$com_code1, "D3")) | (str_detect(df$com_code2, "D3")) |
-                          (str_detect(df$com_code3, "D3")) | (str_detect(df$com_code4, "D3")) |
-                          (str_detect(df$com_code5, "D3")) | (str_detect(df$com_code6, "D3")) |
-                          (str_detect(df$com_code7, "D3")) | (str_detect(df$com_code8, "D3")) |
-                          (str_detect(df$com_code9, "D3")) | (str_detect(df$com_code10, "D3")) |
-                          
-                          (str_detect(df$com_code1, "D4")) | (str_detect(df$com_code2, "D4")) |
-                          (str_detect(df$com_code3, "D4")) | (str_detect(df$com_code4, "D4")) |
-                          (str_detect(df$com_code5, "D4")) | (str_detect(df$com_code6, "D4")) |
-                          (str_detect(df$com_code7, "D4")) | (str_detect(df$com_code8, "D4")) |
-                          (str_detect(df$com_code9, "D4")) | (str_detect(df$com_code10, "D4")), 1, 0),
+                          (str_detect(df$com_code9, "C")) | (str_detect(df$com_code10, "C")), 1, 0),
+         
          anemia = ifelse((str_detect(df$com_code1, "D5")) | (str_detect(df$com_code2, "C")) |
                            (str_detect(df$com_code3, "D5")) | (str_detect(df$com_code4, "D5")) |
                            (str_detect(df$com_code5, "D5")) | (str_detect(df$com_code6, "D5")) |
@@ -93,32 +83,36 @@ df_com <- df_summary %>%
                            (str_detect(df$com_code5, "D6")) | (str_detect(df$com_code6, "D6")) |
                            (str_detect(df$com_code7, "D6")) | (str_detect(df$com_code8, "D6")) |
                            (str_detect(df$com_code9, "D6")) | (str_detect(df$com_code10, "D6")), 1, 0),
+         
          endoc = ifelse((str_detect(df$com_code1, "E")) | (str_detect(df$com_code2, "J47")) |
                           (str_detect(df$com_code3, "E")) | (str_detect(df$com_code4, "E")) |
                           (str_detect(df$com_code5, "E")) | (str_detect(df$com_code6, "E")) |
                           (str_detect(df$com_code7, "E")) | (str_detect(df$com_code8, "E")) |
                           (str_detect(df$com_code9, "E")) | (str_detect(df$com_code10, "E")), 1, 0),
+         
          psycho = ifelse((str_detect(df$com_code1, "F")) | (str_detect(df$com_code2, "J47")) |
                            (str_detect(df$com_code3, "F")) | (str_detect(df$com_code4, "F")) |
                            (str_detect(df$com_code5, "F")) | (str_detect(df$com_code6, "F")) |
                            (str_detect(df$com_code7, "F")) | (str_detect(df$com_code8, "F")) |
                            (str_detect(df$com_code9, "F")) | (str_detect(df$com_code10, "F")), 1, 0),
+         
          neuro = ifelse((str_detect(df$com_code1, "G")) | (str_detect(df$com_code2, "G")) |
                           (str_detect(df$com_code3, "G")) | (str_detect(df$com_code4, "G")) |
                           (str_detect(df$com_code5, "G")) | (str_detect(df$com_code6, "G")) |
                           (str_detect(df$com_code7, "G")) | (str_detect(df$com_code8, "G")) |
                           (str_detect(df$com_code9, "G")) | (str_detect(df$com_code10, "G")), 1, 0),
+         
          heart = ifelse((str_detect(df$com_code1, "I")) | (str_detect(df$com_code2, "I")) |
                           (str_detect(df$com_code3, "I")) | (str_detect(df$com_code4, "I")) |
                           (str_detect(df$com_code5, "I")) | (str_detect(df$com_code6, "I")) |
                           (str_detect(df$com_code7, "I")) | (str_detect(df$com_code8, "I")) |
                           (str_detect(df$com_code9, "I")) | (str_detect(df$com_code10, "I")), 1, 0), 
+         
          digest = ifelse((str_detect(df$com_code1, "K")) | (str_detect(df$com_code2, "K")) |
                            (str_detect(df$com_code3, "K")) | (str_detect(df$com_code4, "K")) |
                            (str_detect(df$com_code5, "K")) | (str_detect(df$com_code6, "K")) |
                            (str_detect(df$com_code7, "K")) | (str_detect(df$com_code8, "K")) |
-                           (str_detect(df$com_code9, "K")) | (str_detect(df$com_code10, "K")), 1, 0)) %>% 
-  select(id, adm, bronch, asthma, malig, anemia, endoc, psycho, neuro, heart, digest, anti_pseudo)
+                           (str_detect(df$com_code9, "K")) | (str_detect(df$com_code10, "K")), 1, 0))
 
 vars <- c("bronch", "asthma", "malig", "anemia", "endoc", "psycho", "neuro", "heart", "digest")
 factorVars <- c("bronch", "asthma", "malig", "anemia", "endoc", "psycho", "neuro", "heart", "digest")
@@ -133,6 +127,7 @@ table1 <- CreateTableOne(vars = vars,
                          strata = "anti_pseudo")
 table1 %>% 
   print()
+
 # summary
 
 df_summary <- df %>% 
@@ -197,8 +192,6 @@ df_summary <- df %>%
          alb = as.numeric(alb),
          bun = as.numeric(bun),
          crp = as.numeric(crp)) %>% 
-  select(id, adm, los, death, diff_time, age, sex, bmi, adm_adl, adm_jcs,
-         anti_pseudo, steroid, oxy, wbc, alb, bun, crp, hugh_johns, disc, direct_death, indirect_death) %>% 
   group_by(id) %>% 
   mutate(count = row_number()) %>% 
   ungroup()
@@ -206,22 +199,19 @@ df_summary <- df %>%
 df_summary %>% glimpse()
 df_summary %>% colnames()
 
-df_summary %>% filter(anti_pseudo == 0) %>% distinct(id)
-df_summary %>% filter(anti_pseudo == 0) %>% distinct(id, adm)
-
-df_summary %>% filter(anti_pseudo == 1) %>% distinct(id)
-df_summary %>% filter(anti_pseudo == 1) %>% distinct(id, adm)
-
 vars <- c("count", "age", "sex", "bmi", "adm_adl", "hugh_johns", "disc_adl", "adm_jcs",
-          "disc_jcs", "oxy", "wbc", "alb", "bun", "crp", "anti_pseudo", "steroid", "los", "death", "direct_death", "indirect_death")
-factorVars <- c("death", "sex", "adm_adl", "hugh_johns", "disc_adl", "adm_jcs",
-                "disc_jcs", "anti_pseudo", "steroid", "oxy", "count", "direct_death", "indirect_death")
+          "disc_jcs", "cci_score", "oxy", "wbc", "alb", "bun", "crp", "anti_pseudo", "steroid", "los",
+          "death", "direct_death", "indirect_death",
+          "ventilation", "dialysis", "intubation")
+factorVars <- c("death", "sex", "adm_adl", "hugh_johns", "disc_adl", "adm_jcs", 
+                "disc_jcs", "anti_pseudo", "steroid", "oxy", "count", "direct_death",
+                "indirect_death", "ventilation", "dialysis", "intubation")
 table1 <- CreateTableOne(vars = vars,
                          data = df_summary,
                          includeNA = FALSE,
                          factorVars = factorVars)
 table1 %>% 
-  print(nonnormal = c("wbc", "alb", "bun", "crp", "los"))
+  print(nonnormal = c("cci_score", "wbc", "alb", "bun", "crp", "los"))
 
 table2 <- CreateTableOne(vars = vars,
                          data = df_summary,
@@ -229,7 +219,7 @@ table2 <- CreateTableOne(vars = vars,
                          factorVars = factorVars,
                          strata = "anti_pseudo")
 table2 %>% 
-  print(nonnormal = c("wbc", "alb", "bun", "crp", "los"))
+  print(nonnormal = c("cci_score", "wbc", "alb", "bun", "crp", "los"))
 
 #ggplot_shiny(data = df_summary)
 
@@ -462,183 +452,115 @@ selected_abx_use_change <- abx_use_change %>%
 
 selected_abx_use_change_final <- inner_join(id_key, selected_abx_use_change, by = "id")
 
-# Total procedure ---------------------------------------------------------
+# Atypical change
 
-claim_procedure_data = fread("input/2021102512_52_Claim_Procedure_data_2021_002_SCE.csv.gz")
-claim_procedure_data <- claim_procedure_data %>% 
+emr_drug_data = fread("input/2021102512_3_EMR_Drug_data_2021_002_SCE.csv.gz")
+
+id_key <- df %>% 
+  distinct(id)
+
+emr_drug_data %>% colnames()
+
+oral <- read_excel("memo/oral.xlsx")
+iv <- read_excel("memo/iv.xlsx")
+anti_atypical <- read_excel("memo/anti_atypical.xlsx")
+anti_atypical <- anti_atypical %>% 
+  pull(drug)
+filter_anti_atypical <- str_c(anti_atypical, collapse = "|")
+anti_atypical_oral <- oral %>% 
+  filter(str_detect(成分名, filter_anti_atypical)) %>% 
+  select(2) %>% 
+  pull()
+filter_anti_atypical_oral_code <- str_c(anti_atypical_oral, collapse = "|")
+
+anti_atypical <- read_excel("memo/anti_atypical.xlsx")
+anti_atypical <- anti_atypical %>% 
+  pull(drug)
+filter_anti_atypical <- str_c(anti_atypical, collapse = "|")
+anti_atypical_iv <- iv %>% 
+  filter(str_detect(成分名, filter_anti_atypical)) %>% 
+  select(2) %>% 
+  pull()
+filter_anti_atypical_iv_code <- str_c(anti_atypical_iv, collapse = "|")
+
+abx_use_change <- emr_drug_data %>% 
+  select(1,3,4,8) %>% 
   rename(id = "患者ID",
-         day = "対象日",
-         code = "診療行為コード",
-         name = "診療行為") %>% 
-  mutate(id = as.character(id),
-         day = ymd(day)) 
-
-key <- df %>% 
-  distinct(id, adm, disc)
-
-id_key <- key %>% 
-  distinct(id, .keep_all=TRUE)
-
-count_key <- key %>% 
+         start = "開始日",
+         code = "薬価コード",
+         name = "薬剤名") %>% 
+  distinct(id, name, .keep_all=TRUE) %>% 
+  mutate(atypical_tag = ifelse(str_detect(code, c(filter_anti_atypical_oral_code, filter_anti_atypical_iv_code)), 1, 0)) %>% 
+  distinct(id, atypical_tag, .keep_all=TRUE) %>% 
   group_by(id) %>% 
-  mutate(count = row_number(),
-         id = as.character(id),
-         disc = ymd(disc))
-max(count_key$count)
+  filter(n() >= 2) %>% 
+  mutate(lag_atypical_tag = lag(atypical_tag),
+         lag_start = lag(start),
+         diff = atypical_tag - lag_atypical_tag,
+         diff_time = start - lag_start) %>% 
+  #filter(0 < diff_time & diff_time <= 7) %>% 
+  ungroup()
 
-## mechanical ventilation
+selected_abx_use_change <- abx_use_change %>%
+  filter(diff == 1) %>% 
+  distinct(id, .keep_all=TRUE) %>% # confirm no more than 2 change
+  filter(0 < diff_time & diff_time <= 7) 
 
-ventilation <- claim_procedure_data %>% 
-  filter(name == "人工呼吸" | name == "人工呼吸（５時間超）" | name == "救命のための気管内挿管" | name == "人工呼吸（鼻マスク式人工呼吸器）" | 
-           name == "人工呼吸（鼻マスク式人工呼吸器）（５時間超）" | name == "人工呼吸（閉鎖循環式麻酔装置）（５時間超）" | name == "人工呼吸（閉鎖循環式麻酔装置）" | 
-           name == "ＣＰＡＰ" | name == "ＣＰＡＰ（５時間超）" | name == "ＩＭＶ（５時間超）") %>% 
-  arrange(id, day) %>% 
-  distinct(id, day, .keep_all=TRUE)
+selected_abx_use_change_final <- inner_join(id_key, selected_abx_use_change, by = "id")
 
-venti_use <- c()
+# MRSA change
 
-for(i in 1:17) {
-  filter_key <- count_key %>% 
-    filter(count == i)
-  id1 <- filter_key$id
-  id2 <- ventilation$id
-  y1 <- filter_key$adm
-  y2 <- ventilation$day
-  venti_filter <- neardate(id1, id2, y1, y2)
-  ventilation_select <- ventilation[venti_filter, ] %>% 
-    drop_na(id) %>% 
-    distinct(id, .keep_all=TRUE)
-  count <- count_key %>% 
-    filter(count == i)  
-  venti_use_append <- left_join(count, ventilation_select, by = "id")
-  venti_use <- bind_rows(venti_use, venti_use_append)
-}
+emr_drug_data = fread("input/2021102512_3_EMR_Drug_data_2021_002_SCE.csv.gz")
 
-# don't care about the error
-venti_use <- venti_use %>% 
-  filter(day < disc) %>% 
-  arrange(id, adm) %>% 
-  drop_na(code) %>% 
-  rename(ventilation = "code") %>% 
-  select(id, adm, ventilation)
+id_key <- df %>% 
+  distinct(id)
 
-df_summary <- left_join(df_summary, venti_use, by = c("id", "adm"))
-df_summary <- df_summary %>% 
-  mutate(ventilation = if_else(is.na(ventilation), 0, 1))
+emr_drug_data %>% colnames()
 
-## dialysis
+oral <- read_excel("memo/oral.xlsx")
+iv <- read_excel("memo/iv.xlsx")
+anti_mrsa <- read_excel("memo/anti_mrsa.xlsx")
+anti_mrsa <- anti_mrsa %>% 
+  pull(drug)
+filter_anti_mrsa <- str_c(anti_mrsa, collapse = "|")
+anti_mrsa_oral <- oral %>% 
+  filter(str_detect(成分名, filter_anti_mrsa)) %>% 
+  select(2) %>% 
+  pull()
+filter_anti_mrsa_oral_code <- str_c(anti_mrsa_oral, collapse = "|")
 
-dialysis <- claim_procedure_data %>% 
-  filter(name == "持続緩徐式血液濾過" | name == "障害者等加算（持続緩徐式血液濾過）" | name == "人工腎臓（その他）" | name == "透析液水質確保加算（人工腎臓）" | 
-           name == "人工腎臓（導入期）加算"  | name == "人工腎臓（慢性維持透析）（４時間未満）" | name == "透析液水質確保加算２" | 
-           name == "障害者等加算（人工腎臓）" | name == "人工腎臓（慢性維持透析１）（４時間未満）"  | name == "慢性維持透析濾過加算（人工腎臓）" |
-           name == "人工腎臓（慢性維持透析１）（４時間以上５時間未満）" | name == "時間外・休日加算（人工腎臓）" | name ==  "導入期加算２（人工腎臓）" |
-           name == "人工腎臓（慢性維持透析濾過）（複雑）" | name == "人工腎臓（慢性維持透析）（４時間以上５時間未満）" | name == "透析液水質確保加算１" |
-           name == "人工腎臓（慢性維持透析）（５時間以上）" | name == "人工腎臓（慢性維持透析１）（４時間未満）（イを除く）" | name == "人工腎臓（慢性維持透析１）（５時間以上）" | name == "長時間加算（人工腎臓）") %>%  
-  arrange(id, day) %>% 
-  distinct(id, day, .keep_all=TRUE)
+anti_mrsa <- read_excel("memo/anti_mrsa.xlsx")
+anti_mrsa <- anti_mrsa %>% 
+  pull(drug)
+filter_anti_mrsa <- str_c(anti_mrsa, collapse = "|")
+anti_mrsa_iv <- iv %>% 
+  filter(str_detect(成分名, filter_anti_mrsa)) %>% 
+  select(2) %>% 
+  pull()
+filter_anti_mrsa_iv_code <- str_c(anti_mrsa_iv, collapse = "|")
 
-dialysis_use <- c()
+abx_use_change <- emr_drug_data %>% 
+  select(1,3,4,8) %>% 
+  rename(id = "患者ID",
+         start = "開始日",
+         code = "薬価コード",
+         name = "薬剤名") %>% 
+  distinct(id, name, .keep_all=TRUE) %>% 
+  mutate(mrsa_tag = ifelse(str_detect(code, c(filter_anti_mrsa_oral_code, filter_anti_mrsa_iv_code)), 1, 0)) %>% 
+  distinct(id, mrsa_tag, .keep_all=TRUE) %>% 
+  group_by(id) %>% 
+  filter(n() >= 2) %>% 
+  mutate(lag_mrsa_tag = lag(mrsa_tag),
+         lag_start = lag(start),
+         diff = mrsa_tag - lag_mrsa_tag,
+         diff_time = start - lag_start) %>% 
+  #filter(0 < diff_time & diff_time <= 7) %>% 
+  ungroup()
 
-for(i in 1:17) {
-  filter_key <- count_key %>% 
-    filter(count == i)
-  id1 <- filter_key$id
-  id2 <- dialysis$id
-  y1 <- filter_key$adm
-  y2 <- dialysis$day
-  dialysis_filter <- neardate(id1, id2, y1, y2, best = "prior")
-  dialysis_select <- dialysis[dialysis_filter, ] %>% 
-    drop_na(id) %>% 
-    distinct(id, .keep_all=TRUE)
-  count <- count_key %>% 
-    filter(count == i)  
-  dialysis_use_append <- left_join(count, dialysis_select, by = "id")
-  dialysis_use <- bind_rows(dialysis_use, dialysis_use_append)
-}
+selected_abx_use_change <- abx_use_change %>%
+  filter(diff == 1) %>% 
+  distinct(id, .keep_all=TRUE) %>% # confirm no more than 2 change
+  filter(0 < diff_time & diff_time <= 7) 
 
-# don't care about the error
-dialysis_use <- dialysis_use %>% 
-  arrange(id, adm) %>% 
-  drop_na(code) %>% 
-  rename(dialysis = "code") %>% 
-  select(id, adm, dialysis)
-
-df_summary <- left_join(df_summary, dialysis_use, by = c("id", "adm"))
-df_summary <- df_summary %>% 
-  mutate(dialysis = if_else(is.na(dialysis), 0, 1))
-
-# intubation
-
-intubation <- claim_procedure_data %>% 
-  filter(name == "救命のための気管内挿管") %>% 
-  arrange(id, day) %>% 
-  distinct(id, day, .keep_all=TRUE)
-
-intubation_use <- c()
-
-for(i in 1:17) {
-  filter_key <- count_key %>% 
-    filter(count == i)
-  id1 <- filter_key$id
-  id2 <- intubation$id
-  y1 <- filter_key$adm
-  y2 <- intubation$day
-  intubation_filter <- neardate(id1, id2, y1, y2)
-  intubation_select <- intubation[intubation_filter, ] %>% 
-    drop_na(id) %>% 
-    distinct(id, .keep_all=TRUE)
-  count <- count_key %>% 
-    filter(count == i)  
-  intubation_use_append <- left_join(count, intubation_select, by = "id")
-  intubation_use <- bind_rows(intubation_use, intubation_use_append)
-}
-
-# don't care about the error
-intubation_use <- intubation_use %>% 
-  filter(day < disc) %>% 
-  arrange(id, adm) %>% 
-  drop_na(code) %>% 
-  rename(intubation = "code") %>% 
-  select(id, adm, intubation)
-
-df_summary <- left_join(df_summary, intubation_use, by = c("id", "adm"))
-df_summary <- df_summary %>% 
-  mutate(intubation = if_else(is.na(intubation), 0, 1))
-
-# output
-
-df_summary %>% write_rds("output/df_summary.rds", compress = "gz")
-
-factorVars <- vars <- c("ventilation", "dialysis", "intubation")
-table1 <- CreateTableOne(vars = vars,
-                         data = df_summary,
-                         includeNA = FALSE,
-                         factorVars = factorVars,
-                         strata = "anti_pseudo")
-table1 <- CreateTableOne(vars = vars,
-                         data = df_summary,
-                         includeNA = FALSE,
-                         factorVars = factorVars)
-table1 %>% 
-  print()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+selected_abx_use_change_final <- inner_join(id_key, selected_abx_use_change, by = "id")
 

@@ -28,6 +28,49 @@ df_summary <- df_summary %>%
   select(id, los, death, anti_pseudo, age, bmi, adm_adl, hugh_johns,
   adm_jcs, oxy, bun, steroid, count) 
 
+df_py <- df_summary %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py$total_los)/1270
+
+df_py1 <- df_summary %>%
+  filter(anti_pseudo == 0) %>% 
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py1$total_los)/1139
+
+df_py2 <- df_summary %>% 
+  filter(anti_pseudo == 1) %>%
+  group_by(id) %>% 
+  summarise(total_los = sum(los)) %>% 
+  ungroup() 
+sum(df_py2$total_los)/519
+
+obj_py1 <- Surv(as.numeric(df_summary$los), as.numeric(df_summary$death))
+fit_py11 <- survfit(obj_py1 ~ 1,
+                   data = df_summary)
+summary(fit_py11)
+print(fit_py11)
+pyears(obj_py1 ~ 1, scale = 1)
+
+df_summary1 <- df_summary %>% 
+  filter(anti_pseudo == 0)
+obj_py12 <- Surv(as.numeric(df_summary1$los), as.numeric(df_summary1$death))
+fit_py12 <- survfit(obj_py12 ~ 1,
+                   data = df_summary1)
+summary(fit_py12)
+print(fit_py12)
+
+df_summary2 <- df_summary %>% 
+  filter(anti_pseudo == 0)
+obj_py13 <- Surv(as.numeric(df_summary2$los), as.numeric(df_summary2$death))
+fit_py13 <- survfit(obj_py13 ~ 1,
+                    data = df_summary2)
+summary(fit_py13)
+print(fit_py13)
+
 df_comp <- df_summary %>% 
   drop_na()
 df_comp %>% glimpse()
@@ -39,15 +82,21 @@ df_comp <- df_comp %>%
 # Kaplan-Meier Method -----------------------------------------------------
 
 df_comp %>% glimpse()
-df_comp <- df_comp %>% 
-  mutate(alive = ifelse(death == 1, 0, 1))
-obj_km <- Surv(df_comp$los, df_comp$alive)
-fit_km <- survfit(obj_km ~ 1,
-                  data = df_comp)
-summary(fit_km)
-print(fit_km)
 
-ggsurvplot(fit_km,
+obj_py2 <- Surv(as.numeric(df_comp$los), as.numeric(df_comp$death))
+fit_py21 <- survfit(obj_py2 ~ 1,
+                  data = df_comp)
+summary(fit_py21)
+print(fit_py21)
+pyears(obj_py1 ~ 1)
+
+fit_py22 <- survfit(obj_py2 ~ as.numeric(anti_pseudo),
+                    data = df_comp)
+summary(fit_py22)
+print(fit_py22)
+pyears(obj_py1 ~ as.numeric(df_comp$death))
+
+ggsurvplot(fit_py21,
            dat = df_comp,
            legend = "none",
            size = 2,
@@ -60,16 +109,11 @@ ggsurvplot(fit_km,
            censor = F,
            ggtheme = theme_classic())
 
-fit_km2 <- survfit(obj_km ~ anti_pseudo,
-                   data = df_comp)
-summary(fit_km2)
-print(fit_km2)
-
-temp <- ggsurvplot(fit_km2,
+temp <- ggsurvplot(fit_py22,
            dat = df_comp,
            legend.title = "",
            legend.labs = c("Anti-pseudomonal antibiotics group","Non-anti-pseudomonal antibiotics group"),
-           legend = c(.8,.8),
+           legend = c(.3,.4),
            font.legend = 14,
            size = 2,
            conf.int = F,
@@ -77,10 +121,13 @@ temp <- ggsurvplot(fit_km2,
            font.x = 14,
            ylab = "Survival probability",
            font.y = 14,
-           xlim = c(0, 300),
+           xlim = c(0, 100),
+           break.x.by = 20,
            censor = F,
            ggtheme = theme_classic())
 temp
+
+ggsave("figures/Figure3.tiff", dpi = 350)
 
 # Fixed effects model -----------------------------------------------------
 # These fixed effects model did not converge

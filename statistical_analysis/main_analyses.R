@@ -44,7 +44,7 @@ df_mi100_stack <- df_mi100_stack %>%
 res_fm <- df_mi100_stack %>% 
   group_by(.imp) %>% 
   nest() %>% 
-  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + age + age2 + bmi + bmi2 + adm_adl + hugh_johns +
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
                                   adm_jcs + oxy + bun + steroid + count +
                                   frailty(id, dist = "gauss"),
                                 data = .))) 
@@ -59,7 +59,7 @@ exp(combined_res_fm_sum[, 1:4])
 res_gm <- df_mi100_stack %>% 
   group_by(.imp) %>% 
   nest() %>% 
-  mutate(fit = map(data, ~coxph(Surv(los, discharge) ~ anti_pseudo + age + age2 + bmi + bmi2 + adm_adl + hugh_johns +
+  mutate(fit = map(data, ~coxph(Surv(los, discharge) ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
                                   adm_jcs + oxy + bun + steroid + count +
                                   frailty(id, dist = "gauss"),
                                 data = .))) 
@@ -91,7 +91,7 @@ df_mi100_stack <- df_mi100_stack %>%
 res_fm <- df_mi100_stack %>% 
   group_by(.imp) %>% 
   nest() %>% 
-  mutate(fit = map(data, ~coxph(Surv(diff_time, revisit) ~ anti_pseudo + age + age2 + bmi + bmi2 + adm_adl + hugh_johns +
+  mutate(fit = map(data, ~coxph(Surv(diff_time, revisit) ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
                                   adm_jcs + oxy + bun + steroid + count +
                                   frailty(id, dist = "gauss"),
                                 data = .))) 
