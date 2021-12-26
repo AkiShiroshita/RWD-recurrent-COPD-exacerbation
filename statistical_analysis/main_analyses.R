@@ -23,6 +23,8 @@ package.check <- lapply(packages, FUN = function(x){
   }
 })
 
+set.seed(1234)
+
 df_mi100 <- read_rds("output/df_mi100.rds")
 
 df_mi100_1 <- complete(df_mi100, 1) %>% 

@@ -3,6 +3,7 @@
 
 rm(list=ls())
 packages = c("tidyverse",
+             "readxl",
              "data.table",
              "lubridate",
              "psych",
@@ -29,104 +30,6 @@ df %>% distinct(id, adm)
 
 df %>% glimpse()
 df %>% colnames()
-
-# COPD-AE
-df %>% filter(main_code == "J440" | main_code == "J441" | prep_code == "J440" | prep_code == "J441"|
-                reso_code == "J440" | reso_code == "J441") # 1200
-df %>% filter(main_code == "J440" | main_code == "J441" | prep_code == "J440" | prep_code == "J441"|
-                reso_code == "J440" | reso_code == "J441") %>% distinct(id) # 642
-
-# Pneumonia
-df %>% filter(str_detect(df$main_code,"J09") | str_detect(df$reso_code,"J09") | str_detect(df$prep_code,"J09") |
-                str_detect(df$main_code,"J1") | str_detect(df$reso_code,"J1") | str_detect(df$prep_code,"J1"))
-df %>% filter(str_detect(df$main_code,"J09") | str_detect(df$reso_code,"J09") | str_detect(df$prep_code,"J09") |
-                str_detect(df$main_code,"J1") | str_detect(df$reso_code,"J1") | str_detect(df$prep_code,"J1")) %>% distinct(id)
-
-# bronchitis
-df %>% filter(str_detect(df$main_code,"J2") | str_detect(df$reso_code,"J2") | str_detect(df$prep_code,"J2"))
-df %>% filter(str_detect(df$main_code,"J2") | str_detect(df$reso_code,"J2") | str_detect(df$prep_code,"J2")) %>% distinct(id)
-
-# comorbidities  
-
-df_com <- df %>% 
-  mutate(bronch = ifelse((str_detect(df$com_code1, "J47")) | (str_detect(df$com_code2, "J47")) |
-                           (str_detect(df$com_code3, "J47")) | (str_detect(df$com_code4, "J47")) |
-                           (str_detect(df$com_code5, "J47")) | (str_detect(df$com_code6, "J47")) |
-                           (str_detect(df$com_code7, "J47")) | (str_detect(df$com_code8, "J47")) |
-                           (str_detect(df$com_code9, "J47")) | (str_detect(df$com_code10, "J47")), 1, 0),
-         
-         asthma = ifelse((str_detect(df$com_code1, "J45")) | (str_detect(df$com_code2, "J45")) |
-                           (str_detect(df$com_code3, "J45")) | (str_detect(df$com_code4, "J45")) |
-                           (str_detect(df$com_code5, "J45")) | (str_detect(df$com_code6, "J45")) |
-                           (str_detect(df$com_code7, "J45")) | (str_detect(df$com_code8, "J45")) |
-                           (str_detect(df$com_code9, "J45")) | (str_detect(df$com_code10, "J45")) |
-                           (str_detect(df$com_code1, "J46")) | (str_detect(df$com_code2, "J46")) |
-                           (str_detect(df$com_code3, "J46")) | (str_detect(df$com_code4, "J46")) |
-                           (str_detect(df$com_code5, "J46")) | (str_detect(df$com_code6, "J46")) |
-                           (str_detect(df$com_code7, "J46")) | (str_detect(df$com_code8, "J46")) |
-                           (str_detect(df$com_code9, "J46")) | (str_detect(df$com_code10, "J46")), 1, 0),
-         
-         malig = ifelse((str_detect(df$com_code1, "C")) | (str_detect(df$com_code2, "C")) |
-                          (str_detect(df$com_code3, "C")) | (str_detect(df$com_code4, "C")) |
-                          (str_detect(df$com_code5, "C")) | (str_detect(df$com_code6, "C")) |
-                          (str_detect(df$com_code7, "C")) | (str_detect(df$com_code8, "C")) |
-                          (str_detect(df$com_code9, "C")) | (str_detect(df$com_code10, "C")), 1, 0),
-         
-         anemia = ifelse((str_detect(df$com_code1, "D5")) | (str_detect(df$com_code2, "C")) |
-                           (str_detect(df$com_code3, "D5")) | (str_detect(df$com_code4, "D5")) |
-                           (str_detect(df$com_code5, "D5")) | (str_detect(df$com_code6, "D5")) |
-                           (str_detect(df$com_code7, "D5")) | (str_detect(df$com_code8, "D5")) |
-                           (str_detect(df$com_code9, "D5")) | (str_detect(df$com_code10, "D5"))|
-                           
-                           (str_detect(df$com_code1, "D6")) | (str_detect(df$com_code2, "D6")) |
-                           (str_detect(df$com_code3, "D6")) | (str_detect(df$com_code4, "D6")) |
-                           (str_detect(df$com_code5, "D6")) | (str_detect(df$com_code6, "D6")) |
-                           (str_detect(df$com_code7, "D6")) | (str_detect(df$com_code8, "D6")) |
-                           (str_detect(df$com_code9, "D6")) | (str_detect(df$com_code10, "D6")), 1, 0),
-         
-         endoc = ifelse((str_detect(df$com_code1, "E")) | (str_detect(df$com_code2, "J47")) |
-                          (str_detect(df$com_code3, "E")) | (str_detect(df$com_code4, "E")) |
-                          (str_detect(df$com_code5, "E")) | (str_detect(df$com_code6, "E")) |
-                          (str_detect(df$com_code7, "E")) | (str_detect(df$com_code8, "E")) |
-                          (str_detect(df$com_code9, "E")) | (str_detect(df$com_code10, "E")), 1, 0),
-         
-         psycho = ifelse((str_detect(df$com_code1, "F")) | (str_detect(df$com_code2, "J47")) |
-                           (str_detect(df$com_code3, "F")) | (str_detect(df$com_code4, "F")) |
-                           (str_detect(df$com_code5, "F")) | (str_detect(df$com_code6, "F")) |
-                           (str_detect(df$com_code7, "F")) | (str_detect(df$com_code8, "F")) |
-                           (str_detect(df$com_code9, "F")) | (str_detect(df$com_code10, "F")), 1, 0),
-         
-         neuro = ifelse((str_detect(df$com_code1, "G")) | (str_detect(df$com_code2, "G")) |
-                          (str_detect(df$com_code3, "G")) | (str_detect(df$com_code4, "G")) |
-                          (str_detect(df$com_code5, "G")) | (str_detect(df$com_code6, "G")) |
-                          (str_detect(df$com_code7, "G")) | (str_detect(df$com_code8, "G")) |
-                          (str_detect(df$com_code9, "G")) | (str_detect(df$com_code10, "G")), 1, 0),
-         
-         heart = ifelse((str_detect(df$com_code1, "I")) | (str_detect(df$com_code2, "I")) |
-                          (str_detect(df$com_code3, "I")) | (str_detect(df$com_code4, "I")) |
-                          (str_detect(df$com_code5, "I")) | (str_detect(df$com_code6, "I")) |
-                          (str_detect(df$com_code7, "I")) | (str_detect(df$com_code8, "I")) |
-                          (str_detect(df$com_code9, "I")) | (str_detect(df$com_code10, "I")), 1, 0), 
-         
-         digest = ifelse((str_detect(df$com_code1, "K")) | (str_detect(df$com_code2, "K")) |
-                           (str_detect(df$com_code3, "K")) | (str_detect(df$com_code4, "K")) |
-                           (str_detect(df$com_code5, "K")) | (str_detect(df$com_code6, "K")) |
-                           (str_detect(df$com_code7, "K")) | (str_detect(df$com_code8, "K")) |
-                           (str_detect(df$com_code9, "K")) | (str_detect(df$com_code10, "K")), 1, 0))
-
-vars <- c("bronch", "asthma", "malig", "anemia", "endoc", "psycho", "neuro", "heart", "digest")
-factorVars <- c("bronch", "asthma", "malig", "anemia", "endoc", "psycho", "neuro", "heart", "digest")
-table1 <- CreateTableOne(vars = vars,
-                         data = df_com,
-                         includeNA = FALSE,
-                         factorVars = factorVars)
-table1 <- CreateTableOne(vars = vars,
-                         data = df_com,
-                         includeNA = FALSE,
-                         factorVars = factorVars,
-                         strata = "anti_pseudo")
-table1 %>% 
-  print()
 
 # summary
 
@@ -191,7 +94,13 @@ df_summary <- df %>%
          wbc = as.numeric(wbc),
          alb = as.numeric(alb),
          bun = as.numeric(bun),
-         crp = as.numeric(crp)) %>% 
+         crp = as.numeric(crp),
+         age_cci = case_when(age < 50 ~ 0,
+                             50 <= age & age < 59 ~ 1,
+                             60 <= age & age < 69 ~ 2,
+                             70 <= age & age < 79 ~ 3,
+                             80 <= age ~ 4),
+         cci_score = cci_score + as.numeric(age_cci)) %>% 
   group_by(id) %>% 
   mutate(count = row_number()) %>% 
   ungroup()
@@ -220,6 +129,45 @@ table2 <- CreateTableOne(vars = vars,
                          strata = "anti_pseudo")
 table2 %>% 
   print(nonnormal = c("cci_score", "wbc", "alb", "bun", "crp", "los"))
+
+# comorbidities  
+
+df_com <- df %>% 
+  mutate(bronch = ifelse((str_detect(df$com_code1, "J47")) | (str_detect(df$com_code2, "J47")) |
+                           (str_detect(df$com_code3, "J47")) | (str_detect(df$com_code4, "J47")) |
+                           (str_detect(df$com_code5, "J47")) | (str_detect(df$com_code6, "J47")) |
+                           (str_detect(df$com_code7, "J47")) | (str_detect(df$com_code8, "J47")) |
+                           (str_detect(df$com_code9, "J47")) | (str_detect(df$com_code10, "J47")), 1, 0),
+         
+         asthma = ifelse((str_detect(df$com_code1, "J45")) | (str_detect(df$com_code2, "J45")) |
+                           (str_detect(df$com_code3, "J45")) | (str_detect(df$com_code4, "J45")) |
+                           (str_detect(df$com_code5, "J45")) | (str_detect(df$com_code6, "J45")) |
+                           (str_detect(df$com_code7, "J45")) | (str_detect(df$com_code8, "J45")) |
+                           (str_detect(df$com_code9, "J45")) | (str_detect(df$com_code10, "J45")) |
+                           (str_detect(df$com_code1, "J46")) | (str_detect(df$com_code2, "J46")) |
+                           (str_detect(df$com_code3, "J46")) | (str_detect(df$com_code4, "J46")) |
+                           (str_detect(df$com_code5, "J46")) | (str_detect(df$com_code6, "J46")) |
+                           (str_detect(df$com_code7, "J46")) | (str_detect(df$com_code8, "J46")) |
+                           (str_detect(df$com_code9, "J46")) | (str_detect(df$com_code10, "J46")), 1, 0),
+         anti_pseudo_oral = ifelse(str_detect(df$anti_pseudo_oral, "\\d+"), 1, 0),
+         anti_pseudo_iv = ifelse(str_detect(df$anti_pseudo_iv, "\\d+"), 1, 0),
+         anti_pseudo = ifelse(anti_pseudo_oral==1 | anti_pseudo_iv==1, 1, 0),
+         anti_pseudo = as.factor(anti_pseudo)
+         )
+
+vars <- c("bronch", "asthma")
+factorVars <- c("bronch", "asthma")
+table1 <- CreateTableOne(vars = vars,
+                         data = df_com,
+                         includeNA = FALSE,
+                         factorVars = factorVars)
+table1 <- CreateTableOne(vars = vars,
+                         data = df_com,
+                         includeNA = FALSE,
+                         factorVars = factorVars,
+                         strata = "anti_pseudo")
+table1 %>% 
+  print()
 
 #ggplot_shiny(data = df_summary)
 
@@ -305,6 +253,9 @@ df_summary %>% colnames()
 
 df_summary %>% write_rds("output/df_summary.rds", compress = "gz")
 
+df_summary %>% filter(anti_pseudo == 0) %>% distinct(id)
+df_summary %>% filter(anti_pseudo == 1) %>% distinct(id)
+
 df_summary <- df_summary %>% 
   mutate(anti_pseudo = factor(anti_pseudo,
                               levels = c(0, 1),
@@ -359,7 +310,9 @@ graph2 <- ggplot(df_summary, aes(x = count, fill = anti_pseudo)) +
   scale_fill_brewer(palette="Set1")
 graph2
 
-plot_grid(graph1, graph2, ncol = 1)
+plot_grid(graph1, graph2, ncol = 1) 
+
+ggsave("figures/figure2.tiff", dpi = 350)
 
 miss <- miss_var_summary(df_summary)
 miss        

@@ -36,6 +36,9 @@ df %>% write_csv("output/analysis_data.csv")
 # Multiple imputation -----------------------------------------------------
 
 ## mice
+
+set.seed(1234)
+
 df %>% glimpse()
 df_mi <- df 
 df_mi0 <- mice(df_mi, maxit = 0)

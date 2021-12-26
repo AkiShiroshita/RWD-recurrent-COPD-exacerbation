@@ -2,9 +2,11 @@
 
 packages = c(
   "tidyverse",
+  "readr",
   "lubridate",
   "ggplot2",
   "knitr",
+  "data.table",
   "kableExtra",
   "tableone",
   "gt",

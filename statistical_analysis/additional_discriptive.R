@@ -17,7 +17,7 @@ beds_id <- beds %>%
   filter(str_detect(beds$病床数, "500床以上") | str_detect(beds$病床数, "300床以上500床未満"))
 inner_join(df, beds_id, by = "id")
 
-2623/3455
+5095/6601
 
 
 # Vasopressor

@@ -34,21 +34,21 @@ df_py <- df_summary %>%
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py$total_los)/1270
+sum(df_py$total_los)/2360
 
 df_py1 <- df_summary %>%
   filter(anti_pseudo == 0) %>% 
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py1$total_los)/1139
+sum(df_py1$total_los)/2090
 
 df_py2 <- df_summary %>% 
   filter(anti_pseudo == 1) %>%
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py2$total_los)/519
+sum(df_py2$total_los)/1086
 
 obj_py1 <- Surv(as.numeric(df_summary$los), as.numeric(df_summary$death))
 fit_py11 <- survfit(obj_py1 ~ 1,
@@ -90,21 +90,21 @@ df_py <- df_comp %>%
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py$total_los)/1114
+sum(df_py$total_los)/2032
 
 df_py1 <- df_comp %>%
   filter(anti_pseudo == 0) %>% 
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py1$total_los)/957
+sum(df_py1$total_los)/1688
 
 df_py2 <- df_comp %>% 
   filter(anti_pseudo == 1) %>%
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py2$total_los)/430
+sum(df_py2$total_los)/848
 
 obj_py1 <- Surv(as.numeric(df_comp$los), as.numeric(df_comp$death))
 fit_py11 <- survfit(obj_py1 ~ 1,
@@ -163,7 +163,7 @@ temp <- ggsurvplot(fit_py22,
            legend = c(.3,.4),
            font.legend = 14,
            size = 2,
-           conf.int = F,
+           conf.int = T,
            xlab = "Days since admission",
            font.x = 14,
            ylab = "Survival probability",
@@ -183,7 +183,8 @@ ggsave("figures/Figure3.tiff", dpi = 350)
 ## not converged
 
 obj_fixed_comp <- Surv(df_comp$los, df_comp$death)
-fit_fixed_comp <- coxph(obj_fixed_comp ~ anti_pseudo + sex + bmi + adm_adl + steroid + adm_jcs + oxy + crp + alb + bun + count + strata(id),
+fit_fixed_comp <- coxph(obj_fixed_comp ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
+                          adm_jcs + oxy + bun + steroid + count + strata(id),
                         data = df_comp)
 cox.zph(fit_fixed_comp)
 scatter.smooth(residuals(fit_fixed_comp, type="deviance"))
@@ -201,7 +202,8 @@ df_comp_fixed <- df_comp_fixed %>%
   filter(count < 6)
 
 obj_fixed_comp <- Surv(df_comp$los, df_comp$death)
-fit_fixed_comp <- coxph(obj_fixed_comp ~ anti_pseudo + sex + bmi + adm_adl + steroid + adm_jcs + oxy + crp + alb + bun + count + strata(id),
+fit_fixed_comp <- coxph(obj_fixed_comp ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
+                          adm_jcs + oxy + bun + steroid + count + strata(id),
                         data = df_comp)
 cox.zph(fit_fixed_comp)
 scatter.smooth(residuals(fit_fixed_comp, type="deviance"))
@@ -223,12 +225,3 @@ exp(result_frailty[["coefficients"]][1,1])
 exp(result_frailty[["coefficients"]][1,3])
 exp(confint(fit_frailty_comp))
 
-# Cox proportional hazard model with robust standard error ----------------
-
-df_comp %>% glimpse()
-obj_cox_comp <- Surv(df_comp$los, df_comp$death)
-fit_cox_comp <- coxph(obj_cox_comp ~ anti_pseudo + age + bmi + adm_adl + steroid + adm_jcs + oxy + bun + count + cluster(id),
-                          data = df_comp)
-result_frailty <- summary(fit_cox_comp)
-result_frailty
-exp(confint(fit_frailty_comp))
