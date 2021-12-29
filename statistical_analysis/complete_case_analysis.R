@@ -34,21 +34,21 @@ df_py <- df_summary %>%
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py$total_los)/2360
+sum(df_py$total_los)/893
 
 df_py1 <- df_summary %>%
   filter(anti_pseudo == 0) %>% 
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py1$total_los)/2090
+sum(df_py1$total_los)/645
 
 df_py2 <- df_summary %>% 
   filter(anti_pseudo == 1) %>%
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py2$total_los)/1086
+sum(df_py2$total_los)/333
 
 obj_py1 <- Surv(as.numeric(df_summary$los), as.numeric(df_summary$death))
 fit_py11 <- survfit(obj_py1 ~ 1,
@@ -90,21 +90,21 @@ df_py <- df_comp %>%
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py$total_los)/2032
+sum(df_py$total_los)/641
 
 df_py1 <- df_comp %>%
   filter(anti_pseudo == 0) %>% 
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py1$total_los)/1688
+sum(df_py1$total_los)/449
 
 df_py2 <- df_comp %>% 
   filter(anti_pseudo == 1) %>%
   group_by(id) %>% 
   summarise(total_los = sum(los)) %>% 
   ungroup() 
-sum(df_py2$total_los)/848
+sum(df_py2$total_los)/250
 
 obj_py1 <- Surv(as.numeric(df_comp$los), as.numeric(df_comp$death))
 fit_py11 <- survfit(obj_py1 ~ 1,

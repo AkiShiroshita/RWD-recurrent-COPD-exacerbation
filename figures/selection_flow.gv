@@ -3,21 +3,21 @@ digraph flowchart {
 
   node [shape = rectangle]
   A [pos="0,6!" ,label  = "Patients with lower respiratory tract infections\n - 9,101 patients\l - 13,395 observations\l"];
-  B [pos="0,4!",label  = "Patients with COPD and recurrent lower tract infections\n - 2,361 patients\l - 6,655 observations\l"];
+  B [pos="0,4!",label  = "Patients with recurrent lower tract infections within 90 days\n - 906 patients\l - 1,379 observations\l"];
   
   a [pos="0,3!",label = '', shape=invis, width=0, height=0];
   
-  C [pos="5,3!", label = "Excluded patients\n - 47 in-hospital death within 24 hours\l - 7 transfered to another hospital within 24 hours\l"];
+  C [pos="5,3!", label = "Excluded observations\n - 16 in-hospital death within 24 hours\l - 1 transfered to another hospital within 24 hours\l"];
   
-  D [pos="0,2!",label  = "Included in the analysis \n - 2,360 patients\l - 6,601 observations\l"];
+  D [pos="0,2!",label  = "Included in the analysis \n - 893 patients\l - 1,362 observations\l"];
   
   b [pos="0,1!",label = '', shape=invis, width=0, height=0]
   
   c [pos="-2,1!",label = '', shape=invis, width=0, height=0]
   d [pos="3,1!",label = '', shape=invis, width=0, height=0]
   
-  E [pos="-2,0!" ,label = "Anti-pseudomonal antibiotics group\n - 1,086  patients\l - 1,937 observations\l"];
-  F [pos="3,0!",label = "Non-anti-pseudomonal antibiotics group\n - 2,090  patients\l - 4,664 observations\l"];
+  E [pos="-2,0!" ,label = "Non-anti-pseudomonal antibiotics group\n - 645  patients\l - 897 observations\l"];
+  F [pos="3,0!",label = "Anti-pseudomonal antibiotics group\n - 333  patients\l - 465 observations\l"];
 
   A -> B
   B -> a [dir='none']

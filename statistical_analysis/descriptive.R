@@ -6,6 +6,8 @@ packages = c("tidyverse",
              "readxl",
              "data.table",
              "lubridate",
+             "epitools",
+             "fmsb",
              "psych",
              "arsenal",
              "tableone",
@@ -75,9 +77,6 @@ df_summary <- df %>%
          adm_jcs = as.factor(adm_jcs),
          disc_adl = as.factor(disc_adl),
          bmi = as.numeric(bmi),
-         disc = ymd(disc),
-         los = disc - adm + 1,
-         los = as.numeric(los),
          death = ifelse(prognosis == 6 | prognosis == 7, 1, 0),
          death = as.factor(death),
          direct_death = ifelse(prognosis==6, 1, 0),
@@ -108,10 +107,15 @@ df_summary <- df %>%
 df_summary %>% glimpse()
 df_summary %>% colnames()
 
+df_summary1 <- df_summary %>% filter(anti_pseudo == 0) 
+length(unique(df_summary1$id))
+df_summary2 <- df_summary %>% filter(anti_pseudo == 1) 
+length(unique(df_summary2$id))
+
 vars <- c("count", "age", "sex", "bmi", "adm_adl", "hugh_johns", "disc_adl", "adm_jcs",
           "disc_jcs", "cci_score", "oxy", "wbc", "alb", "bun", "crp", "anti_pseudo", "steroid", "los",
           "death", "direct_death", "indirect_death",
-          "ventilation", "dialysis", "intubation")
+          "ventilation", "dialysis", "intubation", "diff_time")
 factorVars <- c("death", "sex", "adm_adl", "hugh_johns", "disc_adl", "adm_jcs", 
                 "disc_jcs", "anti_pseudo", "steroid", "oxy", "count", "direct_death",
                 "indirect_death", "ventilation", "dialysis", "intubation")
@@ -120,7 +124,7 @@ table1 <- CreateTableOne(vars = vars,
                          includeNA = FALSE,
                          factorVars = factorVars)
 table1 %>% 
-  print(nonnormal = c("cci_score", "wbc", "alb", "bun", "crp", "los"))
+  print(nonnormal = c("cci_score", "wbc", "alb", "bun", "crp", "los", "diff_time"))
 
 table2 <- CreateTableOne(vars = vars,
                          data = df_summary,
@@ -128,7 +132,7 @@ table2 <- CreateTableOne(vars = vars,
                          factorVars = factorVars,
                          strata = "anti_pseudo")
 table2 %>% 
-  print(nonnormal = c("cci_score", "wbc", "alb", "bun", "crp", "los"))
+  print(nonnormal = c("cci_score", "wbc", "alb", "bun", "crp", "los", "diff_time"))
 
 # comorbidities  
 
@@ -175,7 +179,7 @@ table1 %>%
 
 df <- read_rds("output/cleaned_data.rds")
 
-miss <- miss_var_summary(df)
+miss <- miss_var_summary(df_com)
 miss       
 
 df_summary <- df %>% 
@@ -220,9 +224,6 @@ df_summary <- df %>%
          adm_jcs = as.factor(adm_jcs),
          disc_adl = as.factor(disc_adl),
          bmi = as.numeric(bmi),
-         disc = ymd(disc),
-         los = disc - adm + 1,
-         los = as.numeric(los),
          death = ifelse(prognosis == 6 | prognosis == 7, 1, 0),
          death = as.factor(death),
          direct_death = ifelse(prognosis==6, 1, 0),
@@ -322,29 +323,34 @@ miss
 
 df_stra <- df %>% 
   select(id, adm, oral_abx, iv_abx) %>% 
-  separate(oral_abx, c("oral_abx1", "oral_abx2",  "oral_abx3", "oral_abx4"), sep="_") %>% 
+  separate(oral_abx, c("oral_abx1", "oral_abx2", "oral_abx3", "oral_abx4"), sep="_") %>% 
   separate(iv_abx, c("iv_abx1", "iv_abx2", "iv_abx3", "iv_abx4", "iv_abx5"), sep="_") 
 df_stra %>% glimpse()
 
 df_stra <- df_stra %>% 
   pivot_longer(cols = c(-id, -adm), names_to = "abx", values_to = "value")
-tb <- table(df_stra$value) %>% as.data.frame()
-tb <- tb %>% 
-  mutate(Var1 = as.character(Var1))
 
 oral <- read_excel("memo/oral.xlsx")
 oral <- oral %>% 
-  rename(Var1 = "薬価基準収載医薬品コード",
+  rename(value = "薬価基準収載医薬品コード",
          ing = "成分名") %>% 
-  select(Var1, ing)
+  select(value, ing)
 iv <- read_excel("memo/iv.xlsx")
 iv <- iv %>% 
-  rename(Var1 = "薬価基準収載医薬品コード",
+  rename(value = "薬価基準収載医薬品コード",
          ing = "成分名") %>% 
-  select(Var1, ing)
+  select(value, ing)
 
-tb <- left_join(tb, oral, by = "Var1")
-tb <- left_join(tb, iv, by = "Var1")
+df_stra <- left_join(df_stra, oral, by = "value")
+df_stra <- left_join(df_stra, iv, by = "value")
+
+df_stra <- df_stra %>% 
+  unite(col = ing, starts_with("ing"), sep = "", na.rm = TRUE)
+
+df_stra <- df_stra %>% 
+  distinct(id, adm, ing)
+
+tb <- table(df_stra$ing) %>% as.data.frame()
 
 tb %>% write.csv("output/abx_strategies.csv",
                  fileEncoding = "shift-jis")
@@ -359,7 +365,48 @@ id_key <- df %>%
 emr_drug_data %>% colnames()
 
 oral <- read_excel("memo/oral.xlsx")
+oral_abx <- read_excel("memo/abx.xlsx")
+oral_abx %>% colnames()
+oral_abx <- oral_abx %>% 
+  rename(name = "一般名(日本語)")
+oral_abx <- oral_abx %>% 
+  drop_na(name) %>% 
+  pull(name)
+filter_oral_abx_ing <- str_c(oral_abx, collapse = "|")
+oral_abx_code <- oral %>% 
+  filter(str_detect(成分名, filter_oral_abx_ing)) %>% 
+  select(薬価基準収載医薬品コード)
+filter_oral_abx_code <- oral_abx_code %>% 
+  drop_na(薬価基準収載医薬品コード) %>% 
+  pull(薬価基準収載医薬品コード)
+filter_oral_abx_code <- str_c(filter_oral_abx_code, collapse = "|")
+
 iv <- read_excel("memo/iv.xlsx")
+iv_abx <- read_excel("memo/abx.xlsx")
+iv_abx %>% colnames()
+iv_abx <- iv_abx %>% 
+  rename(name = "一般名(日本語)")
+iv_abx <- iv_abx %>% 
+  drop_na(name) %>% 
+  pull(name)
+filter_iv_abx_ing <- str_c(iv_abx, collapse = "|")
+iv_abx_code <- iv %>% 
+  filter(str_detect(成分名, filter_iv_abx_ing)) %>% 
+  select(薬価基準収載医薬品コード)
+filter_iv_abx_code <- iv_abx_code %>% 
+  drop_na(薬価基準収載医薬品コード) %>% 
+  pull(薬価基準収載医薬品コード)
+filter_iv_abx_code <- str_c(filter_iv_abx_code, collapse = "|")
+
+anti_pseudo <- anti_pseudo %>% 
+  pull(drug)
+filter_anti_pseudo <- str_c(anti_pseudo, collapse = "|")
+anti_pseudo_oral <- oral %>% 
+  filter(str_detect(成分名, filter_anti_pseudo)) %>% 
+  select(2) %>% 
+  pull()
+filter_anti_pseudo_oral_code <- str_c(anti_pseudo_oral, collapse = "|")
+
 anti_pseudo <- read_excel("memo/anti_pseudo.xlsx")
 anti_pseudo <- anti_pseudo %>% 
   pull(drug)
@@ -387,12 +434,18 @@ abx_use_change <- emr_drug_data %>%
          code = "薬価コード",
          name = "薬剤名") %>% 
   distinct(id, name, .keep_all=TRUE) %>% 
-  mutate(pseudo_tag = ifelse(str_detect(code, c(filter_anti_pseudo_oral_code, filter_anti_pseudo_iv_code)), 1, 0)) %>% 
+  filter(str_detect(code, filter_anti_pseudo_oral_code) | 
+           str_detect(code, filter_anti_pseudo_iv_code) |
+           str_detect(code, filter_oral_abx_code) |
+           str_detect(code, filter_iv_abx_code)) %>% 
+  mutate(pseudo_tag = ifelse(str_detect(code, filter_anti_pseudo_oral_code) | 
+                               str_detect(code, filter_anti_pseudo_iv_code), 1, 0)) %>% 
   distinct(id, pseudo_tag, .keep_all=TRUE) %>% 
   group_by(id) %>% 
   filter(n() >= 2) %>% 
   mutate(lag_pseudo_tag = lag(pseudo_tag),
          lag_start = lag(start),
+         lag_name = lag(name),
          diff = pseudo_tag - lag_pseudo_tag,
          diff_time = start - lag_start) %>% 
   #filter(0 < diff_time & diff_time <= 7) %>% 
@@ -400,7 +453,7 @@ abx_use_change <- emr_drug_data %>%
 
 selected_abx_use_change <- abx_use_change %>%
   filter(diff == 1) %>% 
-  distinct(id, .keep_all=TRUE) %>% # confirm no more than 2 change
+  #distinct(id, .keep_all=TRUE) %>% # confirm no more than 2 change
   filter(0 < diff_time & diff_time <= 7) 
 
 selected_abx_use_change_final <- inner_join(id_key, selected_abx_use_change, by = "id")
@@ -443,7 +496,8 @@ abx_use_change <- emr_drug_data %>%
          code = "薬価コード",
          name = "薬剤名") %>% 
   distinct(id, name, .keep_all=TRUE) %>% 
-  mutate(atypical_tag = ifelse(str_detect(code, c(filter_anti_atypical_oral_code, filter_anti_atypical_iv_code)), 1, 0)) %>% 
+  mutate(atypical_tag = ifelse(str_detect(code, filter_anti_atypical_oral_code) | 
+                                 str_detect(code, filter_anti_atypical_iv_code), 1, 0)) %>% 
   distinct(id, atypical_tag, .keep_all=TRUE) %>% 
   group_by(id) %>% 
   filter(n() >= 2) %>% 
@@ -460,6 +514,17 @@ selected_abx_use_change <- abx_use_change %>%
   filter(0 < diff_time & diff_time <= 7) 
 
 selected_abx_use_change_final <- inner_join(id_key, selected_abx_use_change, by = "id")
+
+df <- df %>% mutate(atypical_tag = ifelse(str_detect(df$oral_abx, filter_anti_atypical_oral_code) |
+                                            str_detect(df$iv_abx, filter_anti_atypical_iv_code), 1, 0)) 
+
+df <- df %>% 
+  mutate(anti_pseudo_oral = ifelse(str_detect(df$anti_pseudo_oral, "\\d+"), 1, 0),
+         anti_pseudo_iv = ifelse(str_detect(df$anti_pseudo_iv, "\\d+"), 1, 0),
+         anti_pseudo = ifelse(anti_pseudo_oral==1 | anti_pseudo_iv==1, 1, 0),
+         anti_pseudo = as.factor(anti_pseudo))
+df %>% filter(atypical_tag == 1 & anti_pseudo == 0) 
+df %>% filter(atypical_tag == 1 & anti_pseudo == 1) 
 
 # MRSA change
 
@@ -517,3 +582,19 @@ selected_abx_use_change <- abx_use_change %>%
 
 selected_abx_use_change_final <- inner_join(id_key, selected_abx_use_change, by = "id")
 
+mrsa <- df %>% mutate(mrsa_tag = ifelse(str_detect(oral_abx, c(filter_anti_mrsa_oral_code, filter_anti_mrsa_iv_code)) | 
+                                             str_detect(iv_abx, c(filter_anti_mrsa_oral_code, filter_anti_mrsa_iv_code)), 1, 0)) %>% 
+  filter(mrsa_tag == 1) # 10
+mrsa %>% 
+  mutate(anti_pseudo_oral = ifelse(str_detect(mrsa$anti_pseudo_oral, "\\d+"), 1, 0),
+         anti_pseudo_iv = ifelse(str_detect(mrsa$anti_pseudo_iv, "\\d+"), 1, 0),
+         anti_pseudo = ifelse(anti_pseudo_oral==1 | anti_pseudo_iv==1, 1, 0),
+         anti_pseudo = as.factor(anti_pseudo)) %>% 
+  filter(anti_pseudo == 0) # 199
+
+mrsa %>% 
+  mutate(anti_pseudo_oral = ifelse(str_detect(mrsa$anti_pseudo_oral, "\\d+"), 1, 0),
+         anti_pseudo_iv = ifelse(str_detect(mrsa$anti_pseudo_iv, "\\d+"), 1, 0),
+         anti_pseudo = ifelse(anti_pseudo_oral==1 | anti_pseudo_iv==1, 1, 0),
+         anti_pseudo = as.factor(anti_pseudo)) %>% 
+  filter(anti_pseudo == 1) # 336
