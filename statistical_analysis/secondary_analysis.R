@@ -15,7 +15,9 @@ packages = c("devtools",
              "ggplotgui",
              "ggthemes",
              "arsenal",
-             "survival")
+             "survival",
+             "epitools",
+             "fmsb")
 package.check <- lapply(packages, FUN = function(x){
   if (!require(x, character.only = TRUE)){
     install.packages(x, dependencies = TRUE)
@@ -121,3 +123,17 @@ table1 <- CreateTableOne(vars = vars,
                          factorVars = factorVars)
 table1 %>% 
   print()
+
+
+# RIsk ratio and risk difference ------------------------------------------
+
+tapw <- c("Anti_pseudo", "Not")
+outc <- c("CDI", "Not")	
+dat <- matrix(c(11, 886, 6, 459),2,2,byrow=TRUE)
+dimnames(dat) <- list("Exposure" = tapw, "Outcome" = outc)
+dat
+riskratio.wald(dat, rev="c")
+
+res <- riskdifference(11, 886, 6, 459, CRC=TRUE)
+str(res)
+print(res)
