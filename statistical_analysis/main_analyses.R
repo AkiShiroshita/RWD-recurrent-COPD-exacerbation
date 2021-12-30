@@ -43,6 +43,21 @@ df_mi100_stack <- df_mi100_stack %>%
 
 # Frailty model (death) -----------------------------------------------------------
 
+## crude
+
+res_fm <- df_mi100_stack %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm
+combined_res_fm <- MIcombine(res_fm$fit, call=NULL)
+
+combined_res_fm_sum <- summary(combined_res_fm)
+exp(combined_res_fm_sum[, 1:4])
+
+## adjusted
 res_fm <- df_mi100_stack %>% 
   group_by(.imp) %>% 
   nest() %>% 

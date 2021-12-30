@@ -214,6 +214,18 @@ confint(fit_fixed_comp)
 
 # Frailty model -----------------------------------------------------------
 
+## crude
+## count: continuous
+
+obj_frailty_comp <- Surv(df_comp$los, df_comp$death)
+fit_frailty_comp <- coxph(obj_frailty_comp ~ anti_pseudo + count + frailty(id),
+                          data = df_comp)
+result_frailty <- summary(fit_frailty_comp)
+exp(result_frailty[["coefficients"]][1,1])
+exp(result_frailty[["coefficients"]][1,3])
+exp(confint(fit_frailty_comp))
+
+## adjusted
 ## count: continuous
 
 obj_frailty_comp <- Surv(df_comp$los, df_comp$death)

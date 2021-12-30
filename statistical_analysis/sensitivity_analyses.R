@@ -46,6 +46,18 @@ df_mi100_stack <- df_mi100_stack %>%
 res_fm2 <- df_mi100_stack %>% 
   group_by(.imp) %>% 
   nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + count +
+                                  frailty(id, dist = "gamma"),
+                                data = .))) 
+res_fm2
+combined_res_fm2 <- MIcombine(res_fm2$fit, call=NULL)
+
+combined_res_fm_sum2 <- summary(combined_res_fm2)
+exp(combined_res_fm_sum2[, 1:4])
+
+res_fm2 <- df_mi100_stack %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
   mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
                                   adm_jcs + oxy + bun + steroid + count +
                                   frailty(id, dist = "gamma"),
@@ -57,6 +69,17 @@ combined_res_fm_sum2 <- summary(combined_res_fm2)
 exp(combined_res_fm_sum2[, 1:4])
 
 # Cox proportional hazard model with robust standard error ----------------
+
+res_fm2 <- df_mi100_stack %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + count + cluster(id),
+                                data = .))) 
+res_fm2
+combined_res_fm2 <- MIcombine(res_fm2$fit, call=NULL)
+
+combined_res_fm_sum2 <- summary(combined_res_fm2)
+exp(combined_res_fm_sum2[, 1:4])
 
 res_fm2 <- df_mi100_stack %>% 
   group_by(.imp) %>% 
