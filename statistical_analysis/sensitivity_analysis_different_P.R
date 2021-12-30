@@ -2127,6 +2127,18 @@ df_mi100_stack <- df_mi100_stack %>%
 res_fm <- df_mi100_stack %>% 
   group_by(.imp) %>% 
   nest() %>% 
+  mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + count +
+                                  frailty(id, dist = "gauss"),
+                                data = .))) 
+res_fm
+combined_res_fm <- MIcombine(res_fm$fit, call=NULL)
+
+combined_res_fm_sum <- summary(combined_res_fm)
+exp(combined_res_fm_sum[, 1:4])
+
+res_fm <- df_mi100_stack %>% 
+  group_by(.imp) %>% 
+  nest() %>% 
   mutate(fit = map(data, ~coxph(Surv(los, death) ~ anti_pseudo + age + bmi + adm_adl + hugh_johns +
                                   adm_jcs + oxy + bun + steroid + count +
                                   frailty(id, dist = "gauss"),
