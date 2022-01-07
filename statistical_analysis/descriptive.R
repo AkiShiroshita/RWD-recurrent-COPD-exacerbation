@@ -355,6 +355,16 @@ tb <- table(df_stra$ing) %>% as.data.frame()
 tb %>% write.csv("output/abx_strategies.csv",
                  fileEncoding = "shift-jis")
 
+dual <- df_stra %>% 
+  filter(ing != "") %>% 
+  group_by(id, adm) %>% 
+  filter(n() >= 2) %>% 
+  pivot_wider(names_from = ing,
+              values_from = ing)
+
+dual %>% write.csv("output/dual_strategies.csv",
+                 fileEncoding = "shift-jis")
+
 # Abx change --------------------------------------------------------------
 
 emr_drug_data = fread("input/2021102512_3_EMR_Drug_data_2021_002_SCE.csv.gz")
