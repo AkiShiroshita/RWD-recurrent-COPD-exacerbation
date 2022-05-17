@@ -2,7 +2,7 @@ digraph flowchart {
   layout=neato;
 
   node [shape = rectangle]
-  A [pos="0,6!" ,label  = "Patients with lower respiratory tract infections\n - 9,101 patients\l - 13,395 observations\l"];
+  A [pos="0,6!" ,label  = "Patients with lower respiratory tract infections\n - 9,227 patients\l - 13,821 observations\l"];
   B [pos="0,4!",label  = "Patients with recurrent lower tract infections within 90 days\n - 906 patients\l - 1,379 observations\l"];
   
   a [pos="0,3!",label = '', shape=invis, width=0, height=0];
